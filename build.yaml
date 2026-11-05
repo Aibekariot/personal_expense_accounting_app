@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # Пишем запросы через обычный API drift, "менеджеры" не нужны.
+          generate_manager: false
