@@ -3823,6 +3823,929 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $PlannedOperationsTable extends PlannedOperations
+    with TableInfo<$PlannedOperationsTable, PlannedOperation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlannedOperationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<OperationType, String> type =
+      GeneratedColumn<String>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<OperationType>($PlannedOperationsTable.$convertertype);
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categories (id)',
+    ),
+  );
+  static const VerificationMeta _toAccountIdMeta = const VerificationMeta(
+    'toAccountId',
+  );
+  @override
+  late final GeneratedColumn<int> toAccountId = GeneratedColumn<int>(
+    'to_account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _toAmountMeta = const VerificationMeta(
+    'toAmount',
+  );
+  @override
+  late final GeneratedColumn<int> toAmount = GeneratedColumn<int>(
+    'to_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _payeeMeta = const VerificationMeta('payee');
+  @override
+  late final GeneratedColumn<String> payee = GeneratedColumn<String>(
+    'payee',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startDate = GeneratedColumn<DateTime>(
+    'start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<RepeatUnit, String> repeatUnit =
+      GeneratedColumn<String>(
+        'repeat_unit',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<RepeatUnit>($PlannedOperationsTable.$converterrepeatUnit);
+  static const VerificationMeta _repeatEveryMeta = const VerificationMeta(
+    'repeatEvery',
+  );
+  @override
+  late final GeneratedColumn<int> repeatEvery = GeneratedColumn<int>(
+    'repeat_every',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _doneCountMeta = const VerificationMeta(
+    'doneCount',
+  );
+  @override
+  late final GeneratedColumn<int> doneCount = GeneratedColumn<int>(
+    'done_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _autoConfirmMeta = const VerificationMeta(
+    'autoConfirm',
+  );
+  @override
+  late final GeneratedColumn<bool> autoConfirm = GeneratedColumn<bool>(
+    'auto_confirm',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_confirm" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    type,
+    accountId,
+    amount,
+    categoryId,
+    toAccountId,
+    toAmount,
+    payee,
+    note,
+    startDate,
+    repeatUnit,
+    repeatEvery,
+    endDate,
+    doneCount,
+    autoConfirm,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'planned_operations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlannedOperation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('to_account_id')) {
+      context.handle(
+        _toAccountIdMeta,
+        toAccountId.isAcceptableOrUnknown(
+          data['to_account_id']!,
+          _toAccountIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('to_amount')) {
+      context.handle(
+        _toAmountMeta,
+        toAmount.isAcceptableOrUnknown(data['to_amount']!, _toAmountMeta),
+      );
+    }
+    if (data.containsKey('payee')) {
+      context.handle(
+        _payeeMeta,
+        payee.isAcceptableOrUnknown(data['payee']!, _payeeMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('repeat_every')) {
+      context.handle(
+        _repeatEveryMeta,
+        repeatEvery.isAcceptableOrUnknown(
+          data['repeat_every']!,
+          _repeatEveryMeta,
+        ),
+      );
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('done_count')) {
+      context.handle(
+        _doneCountMeta,
+        doneCount.isAcceptableOrUnknown(data['done_count']!, _doneCountMeta),
+      );
+    }
+    if (data.containsKey('auto_confirm')) {
+      context.handle(
+        _autoConfirmMeta,
+        autoConfirm.isAcceptableOrUnknown(
+          data['auto_confirm']!,
+          _autoConfirmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PlannedOperation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlannedOperation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      type: $PlannedOperationsTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
+      toAccountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}to_account_id'],
+      ),
+      toAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}to_amount'],
+      ),
+      payee: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payee'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_date'],
+      )!,
+      repeatUnit: $PlannedOperationsTable.$converterrepeatUnit.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}repeat_unit'],
+        )!,
+      ),
+      repeatEvery: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}repeat_every'],
+      )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_date'],
+      ),
+      doneCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}done_count'],
+      )!,
+      autoConfirm: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_confirm'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlannedOperationsTable createAlias(String alias) {
+    return $PlannedOperationsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<OperationType, String, String> $convertertype =
+      const EnumNameConverter<OperationType>(OperationType.values);
+  static JsonTypeConverter2<RepeatUnit, String, String> $converterrepeatUnit =
+      const EnumNameConverter<RepeatUnit>(RepeatUnit.values);
+}
+
+class PlannedOperation extends DataClass
+    implements Insertable<PlannedOperation> {
+  final int id;
+
+  /// Только расход, доход или перевод.
+  final OperationType type;
+  final int accountId;
+  final int amount;
+  final int? categoryId;
+  final int? toAccountId;
+  final int? toAmount;
+  final String payee;
+  final String note;
+
+  /// Дата первого повторения (00:00).
+  final DateTime startDate;
+  final RepeatUnit repeatUnit;
+
+  /// Каждые N единиц: каждые 2 недели, каждые 3 месяца.
+  final int repeatEvery;
+
+  /// Последний день, когда может быть повторение (null — без окончания).
+  final DateTime? endDate;
+  final int doneCount;
+
+  /// Проводить автоматически в день платежа (при открытии приложения).
+  final bool autoConfirm;
+  final DateTime createdAt;
+  const PlannedOperation({
+    required this.id,
+    required this.type,
+    required this.accountId,
+    required this.amount,
+    this.categoryId,
+    this.toAccountId,
+    this.toAmount,
+    required this.payee,
+    required this.note,
+    required this.startDate,
+    required this.repeatUnit,
+    required this.repeatEvery,
+    this.endDate,
+    required this.doneCount,
+    required this.autoConfirm,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    {
+      map['type'] = Variable<String>(
+        $PlannedOperationsTable.$convertertype.toSql(type),
+      );
+    }
+    map['account_id'] = Variable<int>(accountId);
+    map['amount'] = Variable<int>(amount);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
+    if (!nullToAbsent || toAccountId != null) {
+      map['to_account_id'] = Variable<int>(toAccountId);
+    }
+    if (!nullToAbsent || toAmount != null) {
+      map['to_amount'] = Variable<int>(toAmount);
+    }
+    map['payee'] = Variable<String>(payee);
+    map['note'] = Variable<String>(note);
+    map['start_date'] = Variable<DateTime>(startDate);
+    {
+      map['repeat_unit'] = Variable<String>(
+        $PlannedOperationsTable.$converterrepeatUnit.toSql(repeatUnit),
+      );
+    }
+    map['repeat_every'] = Variable<int>(repeatEvery);
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<DateTime>(endDate);
+    }
+    map['done_count'] = Variable<int>(doneCount);
+    map['auto_confirm'] = Variable<bool>(autoConfirm);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PlannedOperationsCompanion toCompanion(bool nullToAbsent) {
+    return PlannedOperationsCompanion(
+      id: Value(id),
+      type: Value(type),
+      accountId: Value(accountId),
+      amount: Value(amount),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      toAccountId: toAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toAccountId),
+      toAmount: toAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toAmount),
+      payee: Value(payee),
+      note: Value(note),
+      startDate: Value(startDate),
+      repeatUnit: Value(repeatUnit),
+      repeatEvery: Value(repeatEvery),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      doneCount: Value(doneCount),
+      autoConfirm: Value(autoConfirm),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PlannedOperation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlannedOperation(
+      id: serializer.fromJson<int>(json['id']),
+      type: $PlannedOperationsTable.$convertertype.fromJson(
+        serializer.fromJson<String>(json['type']),
+      ),
+      accountId: serializer.fromJson<int>(json['accountId']),
+      amount: serializer.fromJson<int>(json['amount']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
+      toAccountId: serializer.fromJson<int?>(json['toAccountId']),
+      toAmount: serializer.fromJson<int?>(json['toAmount']),
+      payee: serializer.fromJson<String>(json['payee']),
+      note: serializer.fromJson<String>(json['note']),
+      startDate: serializer.fromJson<DateTime>(json['startDate']),
+      repeatUnit: $PlannedOperationsTable.$converterrepeatUnit.fromJson(
+        serializer.fromJson<String>(json['repeatUnit']),
+      ),
+      repeatEvery: serializer.fromJson<int>(json['repeatEvery']),
+      endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      doneCount: serializer.fromJson<int>(json['doneCount']),
+      autoConfirm: serializer.fromJson<bool>(json['autoConfirm']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'type': serializer.toJson<String>(
+        $PlannedOperationsTable.$convertertype.toJson(type),
+      ),
+      'accountId': serializer.toJson<int>(accountId),
+      'amount': serializer.toJson<int>(amount),
+      'categoryId': serializer.toJson<int?>(categoryId),
+      'toAccountId': serializer.toJson<int?>(toAccountId),
+      'toAmount': serializer.toJson<int?>(toAmount),
+      'payee': serializer.toJson<String>(payee),
+      'note': serializer.toJson<String>(note),
+      'startDate': serializer.toJson<DateTime>(startDate),
+      'repeatUnit': serializer.toJson<String>(
+        $PlannedOperationsTable.$converterrepeatUnit.toJson(repeatUnit),
+      ),
+      'repeatEvery': serializer.toJson<int>(repeatEvery),
+      'endDate': serializer.toJson<DateTime?>(endDate),
+      'doneCount': serializer.toJson<int>(doneCount),
+      'autoConfirm': serializer.toJson<bool>(autoConfirm),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PlannedOperation copyWith({
+    int? id,
+    OperationType? type,
+    int? accountId,
+    int? amount,
+    Value<int?> categoryId = const Value.absent(),
+    Value<int?> toAccountId = const Value.absent(),
+    Value<int?> toAmount = const Value.absent(),
+    String? payee,
+    String? note,
+    DateTime? startDate,
+    RepeatUnit? repeatUnit,
+    int? repeatEvery,
+    Value<DateTime?> endDate = const Value.absent(),
+    int? doneCount,
+    bool? autoConfirm,
+    DateTime? createdAt,
+  }) => PlannedOperation(
+    id: id ?? this.id,
+    type: type ?? this.type,
+    accountId: accountId ?? this.accountId,
+    amount: amount ?? this.amount,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    toAccountId: toAccountId.present ? toAccountId.value : this.toAccountId,
+    toAmount: toAmount.present ? toAmount.value : this.toAmount,
+    payee: payee ?? this.payee,
+    note: note ?? this.note,
+    startDate: startDate ?? this.startDate,
+    repeatUnit: repeatUnit ?? this.repeatUnit,
+    repeatEvery: repeatEvery ?? this.repeatEvery,
+    endDate: endDate.present ? endDate.value : this.endDate,
+    doneCount: doneCount ?? this.doneCount,
+    autoConfirm: autoConfirm ?? this.autoConfirm,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PlannedOperation copyWithCompanion(PlannedOperationsCompanion data) {
+    return PlannedOperation(
+      id: data.id.present ? data.id.value : this.id,
+      type: data.type.present ? data.type.value : this.type,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      toAccountId: data.toAccountId.present
+          ? data.toAccountId.value
+          : this.toAccountId,
+      toAmount: data.toAmount.present ? data.toAmount.value : this.toAmount,
+      payee: data.payee.present ? data.payee.value : this.payee,
+      note: data.note.present ? data.note.value : this.note,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      repeatUnit: data.repeatUnit.present
+          ? data.repeatUnit.value
+          : this.repeatUnit,
+      repeatEvery: data.repeatEvery.present
+          ? data.repeatEvery.value
+          : this.repeatEvery,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      doneCount: data.doneCount.present ? data.doneCount.value : this.doneCount,
+      autoConfirm: data.autoConfirm.present
+          ? data.autoConfirm.value
+          : this.autoConfirm,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlannedOperation(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('accountId: $accountId, ')
+          ..write('amount: $amount, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('toAccountId: $toAccountId, ')
+          ..write('toAmount: $toAmount, ')
+          ..write('payee: $payee, ')
+          ..write('note: $note, ')
+          ..write('startDate: $startDate, ')
+          ..write('repeatUnit: $repeatUnit, ')
+          ..write('repeatEvery: $repeatEvery, ')
+          ..write('endDate: $endDate, ')
+          ..write('doneCount: $doneCount, ')
+          ..write('autoConfirm: $autoConfirm, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    type,
+    accountId,
+    amount,
+    categoryId,
+    toAccountId,
+    toAmount,
+    payee,
+    note,
+    startDate,
+    repeatUnit,
+    repeatEvery,
+    endDate,
+    doneCount,
+    autoConfirm,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlannedOperation &&
+          other.id == this.id &&
+          other.type == this.type &&
+          other.accountId == this.accountId &&
+          other.amount == this.amount &&
+          other.categoryId == this.categoryId &&
+          other.toAccountId == this.toAccountId &&
+          other.toAmount == this.toAmount &&
+          other.payee == this.payee &&
+          other.note == this.note &&
+          other.startDate == this.startDate &&
+          other.repeatUnit == this.repeatUnit &&
+          other.repeatEvery == this.repeatEvery &&
+          other.endDate == this.endDate &&
+          other.doneCount == this.doneCount &&
+          other.autoConfirm == this.autoConfirm &&
+          other.createdAt == this.createdAt);
+}
+
+class PlannedOperationsCompanion extends UpdateCompanion<PlannedOperation> {
+  final Value<int> id;
+  final Value<OperationType> type;
+  final Value<int> accountId;
+  final Value<int> amount;
+  final Value<int?> categoryId;
+  final Value<int?> toAccountId;
+  final Value<int?> toAmount;
+  final Value<String> payee;
+  final Value<String> note;
+  final Value<DateTime> startDate;
+  final Value<RepeatUnit> repeatUnit;
+  final Value<int> repeatEvery;
+  final Value<DateTime?> endDate;
+  final Value<int> doneCount;
+  final Value<bool> autoConfirm;
+  final Value<DateTime> createdAt;
+  const PlannedOperationsCompanion({
+    this.id = const Value.absent(),
+    this.type = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.toAccountId = const Value.absent(),
+    this.toAmount = const Value.absent(),
+    this.payee = const Value.absent(),
+    this.note = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.repeatUnit = const Value.absent(),
+    this.repeatEvery = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.doneCount = const Value.absent(),
+    this.autoConfirm = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PlannedOperationsCompanion.insert({
+    this.id = const Value.absent(),
+    required OperationType type,
+    required int accountId,
+    required int amount,
+    this.categoryId = const Value.absent(),
+    this.toAccountId = const Value.absent(),
+    this.toAmount = const Value.absent(),
+    this.payee = const Value.absent(),
+    this.note = const Value.absent(),
+    required DateTime startDate,
+    required RepeatUnit repeatUnit,
+    this.repeatEvery = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.doneCount = const Value.absent(),
+    this.autoConfirm = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : type = Value(type),
+       accountId = Value(accountId),
+       amount = Value(amount),
+       startDate = Value(startDate),
+       repeatUnit = Value(repeatUnit);
+  static Insertable<PlannedOperation> custom({
+    Expression<int>? id,
+    Expression<String>? type,
+    Expression<int>? accountId,
+    Expression<int>? amount,
+    Expression<int>? categoryId,
+    Expression<int>? toAccountId,
+    Expression<int>? toAmount,
+    Expression<String>? payee,
+    Expression<String>? note,
+    Expression<DateTime>? startDate,
+    Expression<String>? repeatUnit,
+    Expression<int>? repeatEvery,
+    Expression<DateTime>? endDate,
+    Expression<int>? doneCount,
+    Expression<bool>? autoConfirm,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (type != null) 'type': type,
+      if (accountId != null) 'account_id': accountId,
+      if (amount != null) 'amount': amount,
+      if (categoryId != null) 'category_id': categoryId,
+      if (toAccountId != null) 'to_account_id': toAccountId,
+      if (toAmount != null) 'to_amount': toAmount,
+      if (payee != null) 'payee': payee,
+      if (note != null) 'note': note,
+      if (startDate != null) 'start_date': startDate,
+      if (repeatUnit != null) 'repeat_unit': repeatUnit,
+      if (repeatEvery != null) 'repeat_every': repeatEvery,
+      if (endDate != null) 'end_date': endDate,
+      if (doneCount != null) 'done_count': doneCount,
+      if (autoConfirm != null) 'auto_confirm': autoConfirm,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PlannedOperationsCompanion copyWith({
+    Value<int>? id,
+    Value<OperationType>? type,
+    Value<int>? accountId,
+    Value<int>? amount,
+    Value<int?>? categoryId,
+    Value<int?>? toAccountId,
+    Value<int?>? toAmount,
+    Value<String>? payee,
+    Value<String>? note,
+    Value<DateTime>? startDate,
+    Value<RepeatUnit>? repeatUnit,
+    Value<int>? repeatEvery,
+    Value<DateTime?>? endDate,
+    Value<int>? doneCount,
+    Value<bool>? autoConfirm,
+    Value<DateTime>? createdAt,
+  }) {
+    return PlannedOperationsCompanion(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      accountId: accountId ?? this.accountId,
+      amount: amount ?? this.amount,
+      categoryId: categoryId ?? this.categoryId,
+      toAccountId: toAccountId ?? this.toAccountId,
+      toAmount: toAmount ?? this.toAmount,
+      payee: payee ?? this.payee,
+      note: note ?? this.note,
+      startDate: startDate ?? this.startDate,
+      repeatUnit: repeatUnit ?? this.repeatUnit,
+      repeatEvery: repeatEvery ?? this.repeatEvery,
+      endDate: endDate ?? this.endDate,
+      doneCount: doneCount ?? this.doneCount,
+      autoConfirm: autoConfirm ?? this.autoConfirm,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(
+        $PlannedOperationsTable.$convertertype.toSql(type.value),
+      );
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<int>(categoryId.value);
+    }
+    if (toAccountId.present) {
+      map['to_account_id'] = Variable<int>(toAccountId.value);
+    }
+    if (toAmount.present) {
+      map['to_amount'] = Variable<int>(toAmount.value);
+    }
+    if (payee.present) {
+      map['payee'] = Variable<String>(payee.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<DateTime>(startDate.value);
+    }
+    if (repeatUnit.present) {
+      map['repeat_unit'] = Variable<String>(
+        $PlannedOperationsTable.$converterrepeatUnit.toSql(repeatUnit.value),
+      );
+    }
+    if (repeatEvery.present) {
+      map['repeat_every'] = Variable<int>(repeatEvery.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (doneCount.present) {
+      map['done_count'] = Variable<int>(doneCount.value);
+    }
+    if (autoConfirm.present) {
+      map['auto_confirm'] = Variable<bool>(autoConfirm.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlannedOperationsCompanion(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('accountId: $accountId, ')
+          ..write('amount: $amount, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('toAccountId: $toAccountId, ')
+          ..write('toAmount: $toAmount, ')
+          ..write('payee: $payee, ')
+          ..write('note: $note, ')
+          ..write('startDate: $startDate, ')
+          ..write('repeatUnit: $repeatUnit, ')
+          ..write('repeatEvery: $repeatEvery, ')
+          ..write('endDate: $endDate, ')
+          ..write('doneCount: $doneCount, ')
+          ..write('autoConfirm: $autoConfirm, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   late final $CurrenciesTable currencies = $CurrenciesTable(this);
@@ -3833,6 +4756,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OperationsTable operations = $OperationsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $PlannedOperationsTable plannedOperations =
+      $PlannedOperationsTable(this);
   late final Index ratesPairDate = Index(
     'rates_pair_date',
     'CREATE INDEX rates_pair_date ON exchange_rates (from_code, to_code, date)',
@@ -3870,6 +4795,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     operations,
     budgets,
     settings,
+    plannedOperations,
     ratesPairDate,
     operationsDate,
     operationsAccount,

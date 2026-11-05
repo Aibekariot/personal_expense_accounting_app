@@ -8,8 +8,9 @@ class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
   static const _items = [
+    (icon: Icons.event_repeat, title: 'Регулярные платежи', subtitle: 'Аренда, зарплата, подписки; календарь и прогноз', route: Routes.plans),
     (icon: Icons.handshake_outlined, title: 'Долги', subtitle: 'Кто кому и сколько должен', route: Routes.debts),
-    (icon: Icons.track_changes, title: 'Бюджеты', subtitle: 'Месячные лимиты по категориям', route: Routes.budgets),
+    (icon: Icons.track_changes, title: 'Бюджет', subtitle: 'План и факт на месяц по доходам и расходам', route: Routes.budgets),
     (icon: Icons.storefront_outlined, title: 'Получатели и плательщики', subtitle: 'Где и сколько тратите, переименование', route: Routes.payees),
     (icon: Icons.category_outlined, title: 'Категории', subtitle: 'Категории доходов и расходов', route: Routes.categories),
     (icon: Icons.currency_exchange, title: 'Валюты и курсы', subtitle: 'Свои валюты, основная валюта, курсы', route: Routes.currencies),

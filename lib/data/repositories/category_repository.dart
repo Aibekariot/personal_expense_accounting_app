@@ -69,7 +69,7 @@ class CategoryRepository {
       (_db.update(_db.categories)..where((c) => c.id.equals(id)))
           .write(CategoriesCompanion(isArchived: Value(archived)));
 
-  /// Используется ли категория (или её подкатегории) в операциях или бюджетах.
+  /// Используется ли категория (или её подкатегории) в операциях, бюджетах или планах.
   /// Такую категорию нельзя удалить — только отправить в архив.
   Future<bool> isUsed(int id) async {
     final ids = [id, ...(await children(id)).map((c) => c.id)];
@@ -82,7 +82,12 @@ class CategoryRepository {
           ..where((b) => b.categoryId.isIn(ids))
           ..limit(1))
         .getSingleOrNull();
-    return budget != null;
+    if (budget != null) return true;
+    final plan = await (_db.select(_db.plannedOperations)
+          ..where((p) => p.categoryId.isIn(ids))
+          ..limit(1))
+        .getSingleOrNull();
+    return plan != null;
   }
 
   /// Удаляет категорию вместе с подкатегориями. Проверку [isUsed]

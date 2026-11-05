@@ -25,6 +25,7 @@ class BackupData {
     required this.operations,
     required this.budgets,
     required this.settings,
+    required this.plans,
   });
 
   final DateTime? exportedAt;
@@ -36,6 +37,7 @@ class BackupData {
   final List<Operation> operations;
   final List<Budget> budgets;
   final List<Setting> settings;
+  final List<PlannedOperation> plans;
 }
 
 /// Резервная копия всех данных в файл JSON и восстановление из него.
@@ -67,6 +69,7 @@ class BackupService {
         'operations': rows(await _db.select(_db.operations).get()),
         'budgets': rows(await _db.select(_db.budgets).get()),
         'settings': rows(await _db.select(_db.settings).get()),
+        'plannedOperations': rows(await _db.select(_db.plannedOperations).get()),
       },
     };
     return const JsonEncoder.withIndent(' ').convert(data);
@@ -131,6 +134,8 @@ class BackupService {
         operations: operations.map(Operation.fromJson).toList(),
         budgets: table('budgets').map(Budget.fromJson).toList(),
         settings: table('settings').map(Setting.fromJson).toList(),
+        // Планов до версии 4 не было — раздела нет, список пустой.
+        plans: table('plannedOperations').map(PlannedOperation.fromJson).toList(),
       );
     } catch (e) {
       throw BackupException('Файл резервной копии повреждён ($e)');
@@ -151,6 +156,7 @@ class BackupService {
     try {
       await _db.transaction(() async {
         for (final table in <TableInfo<Table, Object?>>[
+          _db.plannedOperations,
           _db.operations,
           _db.budgets,
           _db.debts,
@@ -171,6 +177,7 @@ class BackupService {
           b.insertAll(_db.debts, data.debts);
           b.insertAll(_db.operations, data.operations);
           b.insertAll(_db.budgets, data.budgets);
+          b.insertAll(_db.plannedOperations, data.plans);
         });
       });
     } on BackupException {

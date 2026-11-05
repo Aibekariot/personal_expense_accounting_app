@@ -95,6 +95,11 @@ class AccountRepository {
     return op != null;
   }
 
-  Future<void> delete(int id) =>
-      (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
+  /// Удаляет счёт (без операций — это проверяет вызывающий) вместе с его планами.
+  Future<void> delete(int id) => _db.transaction(() async {
+    await (_db.delete(_db.plannedOperations)
+          ..where((p) => p.accountId.equals(id) | p.toAccountId.equals(id)))
+        .go();
+    await (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
+  });
 }

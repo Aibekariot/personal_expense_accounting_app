@@ -16,6 +16,8 @@ import '../../domain/period.dart';
 import '../../domain/providers.dart';
 import '../../domain/stats.dart';
 import '../accounts/accounts_overview.dart';
+import '../plans/upcoming_tile.dart';
+import '../../domain/schedule.dart';
 import 'filter_sheet.dart';
 import 'operation_tile.dart';
 
@@ -122,6 +124,7 @@ class _History extends ConsumerWidget {
         ),
       if (filter.hasFilters) _ActiveFilters(ledger: ledger, filter: filter),
       const _BackupReminder(),
+      if (!searching && !filter.hasFilters) _UpcomingBlock(ledger: ledger),
       if (searching)
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -299,6 +302,48 @@ class _ActiveFilters extends ConsumerWidget {
               onDeleted: () => notifier.set(filter.copyWith(payee: () => null)),
             ),
           TextButton(onPressed: notifier.reset, child: const Text('Сбросить')),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ближайшие и просроченные плановые платежи (на неделю вперёд).
+class _UpcomingBlock extends ConsumerWidget {
+  const _UpcomingBlock({required this.ledger});
+
+  final Ledger ledger;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plans = ref.watch(plansProvider).value ?? const [];
+    final today = dayOf(DateTime.now());
+    // По одному (ближайшему) повторению каждого плана.
+    final soon = [
+      for (final o in upcoming(plans, to: DateTime(today.year, today.month, today.day + 7)))
+        if (o.index == o.plan.doneCount) o,
+    ];
+    if (soon.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    const shown = 4;
+    return Card.outlined(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 4, 0),
+            child: Row(
+              children: [
+                Expanded(child: Text('Скоро', style: theme.textTheme.titleSmall)),
+                TextButton(
+                  onPressed: () => context.push(Routes.plans),
+                  child: Text(soon.length > shown ? 'Все (${soon.length})' : 'Все планы'),
+                ),
+              ],
+            ),
+          ),
+          for (final o in soon.take(shown)) UpcomingTile(occurrence: o, ledger: ledger),
         ],
       ),
     );

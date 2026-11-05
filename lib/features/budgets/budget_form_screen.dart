@@ -82,7 +82,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   }
 
   Future<void> _delete() async {
-    final ok = await confirmDialog(context, title: 'Удалить бюджет?');
+    final ok = await confirmDialog(context, title: 'Удалить статью бюджета?');
     if (!ok) return;
     await ref.read(budgetRepositoryProvider).delete(_existing!.id);
     if (mounted) context.pop();
@@ -92,7 +92,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Бюджет' : 'Новый бюджет'),
+        title: Text(_isEdit ? 'Статья бюджета' : 'Новая статья бюджета'),
         actions: [
           if (_existing != null)
             IconButton(tooltip: 'Удалить', icon: const Icon(Icons.delete_outline), onPressed: _delete),
@@ -113,25 +113,29 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     if (currencies.isEmpty) return const Center(child: CircularProgressIndicator());
 
     final withBudget = {for (final b in budgets) if (b.id != _existing?.id) b.categoryId};
-    final expense = categories.where((c) => c.type == CategoryType.expense && (!c.isArchived || c.id == _categoryId));
     final items = <DropdownMenuItem<int>>[];
-    for (final top in expense.where((c) => c.parentId == null)) {
-      items.add(DropdownMenuItem(
-        value: top.id,
-        enabled: !withBudget.contains(top.id),
-        child: Text(withBudget.contains(top.id) ? '${top.name} (уже есть)' : top.name),
-      ));
-      for (final child in expense.where((c) => c.parentId == top.id)) {
+    for (final type in CategoryType.values) {
+      final ofType = categories.where((c) => c.type == type && (!c.isArchived || c.id == _categoryId));
+      final prefix = type == CategoryType.income ? 'Доход: ' : '';
+      for (final top in ofType.where((c) => c.parentId == null)) {
         items.add(DropdownMenuItem(
-          value: child.id,
-          enabled: !withBudget.contains(child.id),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: Text(withBudget.contains(child.id) ? '${child.name} (уже есть)' : child.name),
-          ),
+          value: top.id,
+          enabled: !withBudget.contains(top.id),
+          child: Text('$prefix${top.name}${withBudget.contains(top.id) ? ' (уже есть)' : ''}'),
         ));
+        for (final child in ofType.where((c) => c.parentId == top.id)) {
+          items.add(DropdownMenuItem(
+            value: child.id,
+            enabled: !withBudget.contains(child.id),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: Text('${child.name}${withBudget.contains(child.id) ? ' (уже есть)' : ''}'),
+            ),
+          ));
+        }
       }
     }
+    final isIncome = categories.where((c) => c.id == _categoryId).firstOrNull?.type == CategoryType.income;
     final currency = currencies.firstWhere((c) => c.code == _currencyCode, orElse: () => currencies.first);
 
     return Form(
@@ -144,8 +148,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
             isExpanded: true,
             menuMaxHeight: 420,
             decoration: const InputDecoration(
-              labelText: 'Категория расходов',
-              helperText: 'Для основной категории учитываются и её подкатегории',
+              labelText: 'Категория',
+              helperText: 'Расход — лимит на месяц, доход — план дохода. '
+                  'Для основной категории учитываются и подкатегории',
+              helperMaxLines: 2,
               border: OutlineInputBorder(),
             ),
             items: items,
@@ -157,7 +163,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
             controller: _limit,
             decimals: currency.decimals,
             symbol: currency.symbol,
-            label: 'Лимит на месяц',
+            label: isIncome ? 'План дохода на месяц' : 'Лимит на месяц',
             autofocus: !_isEdit,
           ),
           const SizedBox(height: 20),

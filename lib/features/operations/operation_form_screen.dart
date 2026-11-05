@@ -19,7 +19,9 @@ import '../../domain/debts.dart';
 import '../../domain/ledger.dart';
 import '../../domain/payees.dart';
 import '../../domain/providers.dart';
+import '../../domain/schedule.dart';
 import 'category_picker.dart';
+import 'payee_field.dart';
 
 /// Добавление, изменение и копирование операции.
 ///
@@ -34,6 +36,7 @@ class OperationFormScreen extends ConsumerStatefulWidget {
     this.debtId,
     this.accountId,
     this.copyFromId,
+    this.planId,
   });
 
   final int? operationId;
@@ -41,6 +44,10 @@ class OperationFormScreen extends ConsumerStatefulWidget {
   final int? debtId;
   final int? accountId;
   final int? copyFromId;
+
+  /// Провести плановую операцию: поля берутся из плана, после сохранения
+  /// повторение отмечается выполненным.
+  final int? planId;
 
   @override
   ConsumerState<OperationFormScreen> createState() => _OperationFormScreenState();
@@ -75,6 +82,9 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
 
   /// Исходная операция (при изменении или копировании).
   Operation? _source;
+
+  /// Суммы из плана (сумма, сумма зачисления) — заполняются, когда известны валюты.
+  (int, int?)? _planAmounts;
   bool _amountsFilled = false;
   bool _loading = true;
   bool _notFound = false;
@@ -129,6 +139,24 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
         // Сумма уже есть — клавиатура откроется по нажатию на сумму.
         _keypadVisible = !_isEdit;
       }
+    } else if (widget.planId != null) {
+      final p = await ref.read(planRepositoryProvider).getById(widget.planId!);
+      final due = p == null ? null : nextOccurrence(p);
+      if (p == null || due == null) {
+        _notFound = true;
+      } else {
+        _type = p.type;
+        _accountId = p.accountId;
+        _toAccountId = p.toAccountId;
+        _categoryId = p.categoryId;
+        _note.text = p.note;
+        _payee.text = p.payee;
+        final today = dayOf(DateTime.now());
+        _date = due.isAfter(today) ? today : due;
+        _categoryTouched = true;
+        _toAmountTouched = true;
+        _planAmounts = (p.amount, p.toAmount);
+      }
     } else {
       _type = widget.type ?? OperationType.expense;
       _debtId = widget.debtId;
@@ -142,6 +170,13 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   void _fillAmounts(Ledger l) {
     if (_amountsFilled) return;
     _amountsFilled = true;
+    final plan = _planAmounts;
+    if (plan != null && _accountId != null) {
+      _expr = Money.toEditable(plan.$1, decimals: _currencyOf(l, _accountId!).decimals);
+      if (plan.$2 != null && _toAccountId != null) {
+        _toAmount.text = Money.toEditable(plan.$2!, decimals: _currencyOf(l, _toAccountId!).decimals);
+      }
+    }
     final op = _source;
     if (op == null) return;
     _expr = Money.toEditable(op.amount, decimals: _currencyOf(l, op.accountId).decimals)
@@ -292,6 +327,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     try {
       await ref.read(operationRepositoryProvider).save(input, id: existing?.id);
       await ref.read(settingsRepositoryProvider).setLastAccountId(accountId);
+      if (widget.planId != null) await ref.read(planRepositoryProvider).markDone(widget.planId!);
 
       String? message;
       if (debt != null && debtRemaining != null) {
@@ -341,6 +377,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     final debt = l.debts[_debtId];
     if (_isDebt && debt != null) return debtOperationLabel(debt.direction, _type);
     if (_isAdjustment) return 'Корректировка баланса';
+    if (widget.planId != null) return 'Провести платёж';
     return 'Новая операция';
   }
 
@@ -361,6 +398,14 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
               icon: const Icon(Icons.copy_outlined),
               onPressed: () => context.pushReplacement(Routes.operationCopy(_source!.id)),
             ),
+            if (_source!.type == OperationType.expense ||
+                _source!.type == OperationType.income ||
+                _source!.type == OperationType.transfer)
+              IconButton(
+                tooltip: 'Сделать регулярной',
+                icon: const Icon(Icons.event_repeat),
+                onPressed: () => context.pushReplacement(Routes.planNew(fromOperation: _source!.id)),
+              ),
             IconButton(
               tooltip: 'Удалить',
               icon: const Icon(Icons.delete_outline),
@@ -549,7 +594,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
           ],
           if (_isCategorized) ...[
             const SizedBox(height: 12),
-            _PayeeField(
+            PayeeField(
               controller: _payee,
               focusNode: _payeeFocus,
               label: _type == OperationType.income ? 'Плательщик' : 'Получатель',
@@ -732,77 +777,6 @@ class _SecondaryAmount extends StatelessWidget {
         helperText: helper,
         onChanged: (_) => onChanged(),
       ),
-    );
-  }
-}
-
-/// Получатель с подсказками из истории (частые — первыми).
-class _PayeeField extends StatelessWidget {
-  const _PayeeField({
-    required this.controller,
-    required this.focusNode,
-    required this.label,
-    required this.hint,
-    required this.suggestions,
-    required this.onChanged,
-    required this.onSelected,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final String label;
-  final String hint;
-  final List<String> suggestions;
-  final ValueChanged<String> onChanged;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: controller,
-          focusNode: focusNode,
-          maxLength: 60,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: hint,
-            counterText: '',
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.storefront_outlined),
-            suffixIcon: controller.text.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Очистить',
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      controller.clear();
-                      onChanged('');
-                    },
-                  ),
-          ),
-          onChanged: onChanged,
-        ),
-        if (suggestions.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              spacing: 6,
-              children: [
-                for (final s in suggestions)
-                  ActionChip(
-                    label: Text(s),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => onSelected(s),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ],
     );
   }
 }

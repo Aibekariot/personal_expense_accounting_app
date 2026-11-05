@@ -20,6 +20,21 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     super.initState();
     // При запуске тихо обновляем курсы, если они устарели.
     ref.read(ratesRepositoryProvider).updateIfStale();
+    _processPlans();
+  }
+
+  /// Проводит плановые операции с автопроведением, срок которых наступил.
+  Future<void> _processPlans() async {
+    try {
+      final count = await ref.read(planRepositoryProvider).processAuto(DateTime.now());
+      if (count > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Автоматически проведено плановых операций: $count')),
+        );
+      }
+    } catch (_) {
+      // Не мешаем запуску: план можно провести вручную.
+    }
   }
 
   StatefulNavigationShell get shell => widget.shell;

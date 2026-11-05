@@ -20,6 +20,8 @@ import '../features/more/more_screen.dart';
 import '../features/operations/operation_form_screen.dart';
 import '../features/operations/operations_screen.dart';
 import '../features/payees/payees_screen.dart';
+import '../features/plans/plan_form_screen.dart';
+import '../features/plans/plans_screen.dart';
 import '../features/stats/stats_screen.dart';
 import 'home_shell.dart';
 
@@ -27,12 +29,13 @@ abstract final class Routes {
   static const operations = '/operations';
 
   /// Новая операция. Открывается поверх любой вкладки.
-  static String operationNew({OperationType? type, int? debtId, int? accountId}) => Uri(
+  static String operationNew({OperationType? type, int? debtId, int? accountId, int? planId}) => Uri(
     path: '/operation/new',
     queryParameters: {
       if (type != null) 'type': type.name,
       if (debtId != null) 'debt': '$debtId',
       if (accountId != null) 'account': '$accountId',
+      if (planId != null) 'plan': '$planId',
     },
   ).toString().replaceAll(RegExp(r'\?$'), '');
   static String operationEdit(int id) => '/operation/$id';
@@ -65,6 +68,12 @@ abstract final class Routes {
   static String categoryNew(CategoryType type, {int? parentId}) =>
       '/categories/new?type=${type.name}${parentId == null ? '' : '&parent=$parentId'}';
   static String categoryEdit(int id) => '/categories/$id';
+
+  /// Регулярные платежи — тоже поверх вкладок (открываются из ленты и из «Ещё»).
+  static const plans = '/plans';
+  static String planNew({int? fromOperation}) =>
+      fromOperation == null ? '/plans/new' : '/plans/new?from=$fromOperation';
+  static String planEdit(int id) => '/plans/$id';
 }
 
 /// Навигатор поверх нижней панели — для полноэкранных форм.
@@ -85,7 +94,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           debtId: _intParam(state, 'debt'),
           accountId: _intParam(state, 'account'),
           copyFromId: _intParam(state, 'copy'),
+          planId: _intParam(state, 'plan'),
         ),
+      ),
+      GoRoute(
+        path: Routes.plans,
+        builder: (_, _) => const PlansScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (_, state) => PlanFormScreen(fromOperationId: _intParam(state, 'from')),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => PlanFormScreen(planId: int.tryParse(state.pathParameters['id']!) ?? -1),
+          ),
+        ],
       ),
       GoRoute(
         path: '/operation/:id',

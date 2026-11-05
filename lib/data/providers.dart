@@ -12,6 +12,7 @@ import 'repositories/category_repository.dart';
 import 'repositories/currency_repository.dart';
 import 'repositories/debt_repository.dart';
 import 'repositories/operation_repository.dart';
+import 'repositories/plan_repository.dart';
 import 'repositories/rates_repository.dart';
 import 'repositories/settings_repository.dart';
 
@@ -47,6 +48,13 @@ final budgetRepositoryProvider =
 
 final debtRepositoryProvider = Provider(
   (ref) => DebtRepository(
+    ref.watch(databaseProvider),
+    ref.watch(operationRepositoryProvider),
+  ),
+);
+
+final planRepositoryProvider = Provider(
+  (ref) => PlanRepository(
     ref.watch(databaseProvider),
     ref.watch(operationRepositoryProvider),
   ),
@@ -117,4 +125,8 @@ final lastBackupProvider = StreamProvider<DateTime?>(
 
 final backupSnoozeUntilProvider = StreamProvider<DateTime?>(
   (ref) => ref.watch(settingsRepositoryProvider).watchBackupSnoozeUntil(),
+);
+
+final plansProvider = StreamProvider<List<PlannedOperation>>(
+  (ref) => ref.watch(planRepositoryProvider).watchAll(),
 );

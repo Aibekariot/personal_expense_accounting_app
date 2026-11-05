@@ -335,3 +335,114 @@ class _LegendItem extends StatelessWidget {
     children: [LegendDot(color: color), Text(label, style: Theme.of(context).textTheme.bodySmall)],
   );
 }
+
+/// Прогноз капитала по дням — линия; ниже нуля область подсвечивается.
+class ForecastLine extends StatelessWidget {
+  const ForecastLine({super.key, required this.days, required this.values, required this.base});
+
+  final List<DateTime> days;
+
+  /// Капитал на каждый день (в минимальных единицах).
+  final List<int> values;
+  final Currency base;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+    final f = Money.factor(base.decimals).toDouble();
+    final ys = [for (final v in values) v / f];
+    var minY = ys.reduce(math.min);
+    var maxY = ys.reduce(math.max);
+    // Ось с нуля, только если колебания большие или денег может не хватить —
+    // иначе линия получается плоской.
+    if (minY <= 0 || (maxY - minY) >= maxY * 0.5) {
+      minY = math.min(0, minY);
+      maxY = math.max(0, maxY);
+    } else {
+      final pad = math.max((maxY - minY) * 0.2, maxY * 0.02);
+      minY -= pad;
+      maxY += pad;
+    }
+    if (maxY == minY) maxY = minY + 1;
+    final interval = _niceInterval(maxY - minY);
+    minY = (minY / interval).floor() * interval;
+    maxY = (maxY / interval).ceil() * interval;
+    final step = days.length > 40 ? 21 : 7;
+
+    return SizedBox(
+      height: 180,
+      child: LineChart(
+        LineChartData(
+          minY: minY,
+          maxY: maxY,
+          minX: 0,
+          maxX: (days.length - 1).toDouble(),
+          gridData: _grid(context).copyWith(horizontalInterval: interval),
+          borderData: FlBorderData(show: false),
+          extraLinesData: ExtraLinesData(horizontalLines: [
+            if (minY < 0)
+              HorizontalLine(y: 0, color: theme.colorScheme.error.withValues(alpha: 0.6), strokeWidth: 1),
+          ]),
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(),
+            rightTitles: const AxisTitles(),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 56,
+                interval: interval,
+                getTitlesWidget: (v, meta) => SideTitleWidget(
+                  meta: meta,
+                  child: Text(formatCompact(v), style: _axisStyle(context), softWrap: false),
+                ),
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 24,
+                interval: step.toDouble(),
+                getTitlesWidget: (v, meta) {
+                  final i = v.toInt();
+                  if (i < 0 || i >= days.length || v != i.toDouble() || i % step != 0) {
+                    return const SizedBox.shrink();
+                  }
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Text(formatShortDate(days[i], today: days[i]), style: _axisStyle(context), softWrap: false),
+                  );
+                },
+              ),
+            ),
+          ),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => theme.colorScheme.inverseSurface,
+              fitInsideHorizontally: true,
+              fitInsideVertically: true,
+              maxContentWidth: 200,
+              getTooltipItems: (spots) => [
+                for (final s in spots)
+                  LineTooltipItem(
+                    '${formatShortDate(days[s.x.toInt()])}\n${base.format(values[s.x.toInt()])}',
+                    TextStyle(color: theme.colorScheme.onInverseSurface, fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: [for (var i = 0; i < ys.length; i++) FlSpot(i.toDouble(), ys[i])],
+              isStepLineChart: true,
+              color: color,
+              barWidth: 2,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.08)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

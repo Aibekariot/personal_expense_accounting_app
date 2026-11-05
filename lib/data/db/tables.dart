@@ -30,6 +30,16 @@ enum OperationType {
   debtIn,
 }
 
+/// Как часто повторяется плановая операция.
+enum RepeatUnit {
+  /// Один раз.
+  none,
+  day,
+  week,
+  month,
+  year,
+}
+
 /// Направление долга.
 enum DebtDirection {
   /// Мне должны (я дал в долг).
@@ -167,6 +177,43 @@ class Operations extends Table {
   TextColumn get payee => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Плановая (в том числе регулярная) операция: аренда, зарплата, подписка.
+///
+/// Даты повторений не хранятся — они вычисляются из [startDate] и правила
+/// повтора (lib/domain/schedule.dart). [doneCount] — сколько повторений уже
+/// проведено или пропущено; следующее — повторение номер [doneCount].
+@DataClassName('PlannedOperation')
+class PlannedOperations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Только расход, доход или перевод.
+  TextColumn get type => textEnum<OperationType>()();
+  IntColumn get accountId => integer().references(Accounts, #id)();
+  IntColumn get amount => integer()();
+  IntColumn get categoryId =>
+      integer().nullable().references(Categories, #id)();
+  IntColumn get toAccountId =>
+      integer().nullable().references(Accounts, #id)();
+  IntColumn get toAmount => integer().nullable()();
+  TextColumn get payee => text().withDefault(const Constant(''))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+
+  /// Дата первого повторения (00:00).
+  DateTimeColumn get startDate => dateTime()();
+  TextColumn get repeatUnit => textEnum<RepeatUnit>()();
+
+  /// Каждые N единиц: каждые 2 недели, каждые 3 месяца.
+  IntColumn get repeatEvery => integer().withDefault(const Constant(1))();
+
+  /// Последний день, когда может быть повторение (null — без окончания).
+  DateTimeColumn get endDate => dateTime().nullable()();
+  IntColumn get doneCount => integer().withDefault(const Constant(0))();
+
+  /// Проводить автоматически в день платежа (при открытии приложения).
+  BoolColumn get autoConfirm => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Месячный лимит расходов по категории.
