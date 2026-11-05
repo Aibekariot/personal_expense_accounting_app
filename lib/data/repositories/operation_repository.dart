@@ -16,6 +16,7 @@ class OperationInput {
     this.debtId,
     this.debtAmount,
     this.note = '',
+    this.payee = '',
   });
 
   factory OperationInput.fromOperation(Operation o) => OperationInput(
@@ -29,6 +30,7 @@ class OperationInput {
     debtId: o.debtId,
     debtAmount: o.debtAmount,
     note: o.note,
+    payee: o.payee,
   );
 
   final OperationType type;
@@ -47,6 +49,9 @@ class OperationInput {
   /// Сумма в валюте долга, если она отличается от валюты счёта.
   final int? debtAmount;
   final String note;
+
+  /// Получатель (для расхода) или плательщик (для дохода).
+  final String payee;
 
   /// Текст ошибки или null, если всё верно.
   String? validate() {
@@ -90,9 +95,13 @@ class OperationInput {
       debtId: Value(isDebt ? debtId : null),
       debtAmount: Value(isDebt ? debtAmount : null),
       note: Value(note.trim()),
+      payee: Value(isCategorized ? normalizePayee(payee) : ''),
     );
   }
 }
+
+/// Имя получателя без лишних пробелов: «  Глобус   ЦУМ » → «Глобус ЦУМ».
+String normalizePayee(String s) => s.trim().replaceAll(RegExp(r'\s+'), ' ');
 
 class OperationRepository {
   OperationRepository(this._db);
@@ -128,6 +137,15 @@ class OperationRepository {
 
   Future<void> delete(int id) =>
       (_db.delete(_db.operations)..where((o) => o.id.equals(id))).go();
+
+  /// Переименовывает получателя во всех операциях. Если новое имя уже
+  /// есть — получатели объединяются. Возвращает число изменённых операций.
+  Future<int> renamePayee(String from, String to) {
+    final name = normalizePayee(to);
+    if (name.isEmpty) throw ArgumentError('Введите имя');
+    return (_db.update(_db.operations)..where((o) => o.payee.equals(from)))
+        .write(OperationsCompanion(payee: Value(name)));
+  }
 
   /// Корректировка: приводит баланс счёта к фактическому.
   /// Создаёт операцию на разницу. Возвращает разницу (0 — менять нечего).

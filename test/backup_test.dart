@@ -126,6 +126,6 @@ void main() {
     final taxi = lines.firstWhere((l) => l.contains('Такси'));
     expect(taxi, contains('-350;KGS;Транспорт;Такси'));
     expect(taxi, contains('"в ""аэропорт""; ночью"'));
-    expect(lines.firstWhere((l) => l.contains('Перевод')), contains('10;USD;;;Наличные;874,50;KGS'));
+    expect(lines.firstWhere((l) => l.contains('Перевод')), contains('10;USD;;;;Наличные;874,50;KGS'));
   });
 }

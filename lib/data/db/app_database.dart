@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -46,6 +46,8 @@ class AppDatabase extends _$AppDatabase {
     onUpgrade: (m, from, to) async {
       // v2: начальная сумма долга (долги, которые были до начала учёта).
       if (from < 2) await m.addColumn(debts, debts.initialAmount);
+      // v3: получатель / плательщик у операции.
+      if (from < 3) await m.addColumn(operations, operations.payee);
     },
     beforeOpen: (details) async {
       // Без этого SQLite не проверяет связи между таблицами.

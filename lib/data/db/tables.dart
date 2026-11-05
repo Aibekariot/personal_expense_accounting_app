@@ -160,6 +160,11 @@ class Operations extends Table {
   IntColumn get debtAmount => integer().nullable()();
 
   TextColumn get note => text().withDefault(const Constant(''))();
+
+  /// Получатель (магазин, кафе) для расхода или плательщик для дохода.
+  /// Пустая строка — не указан. Отдельной таблицы нет: список получателей
+  /// собирается из операций, переименование — замена во всех операциях.
+  TextColumn get payee => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }

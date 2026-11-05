@@ -75,7 +75,7 @@ class OperationTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       leading: CategoryAvatar(icon: operationIcon(v), color: operationColor(context, v)),
-      title: Text(v.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(v.headline, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
         [
           if (showDate) formatShortDate(v.date),

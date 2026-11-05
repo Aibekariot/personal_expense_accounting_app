@@ -135,6 +135,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                           kinds: _kinds,
                           accountId: _accountId,
                           categoryId: _categoryId,
+                          payee: widget.initial.payee,
                           query: widget.initial.query,
                         ),
                       ),

@@ -69,6 +69,8 @@ class OperationView {
   bool get isExpense => op.type == OperationType.expense;
   bool get isIncome => op.type == OperationType.income;
   bool get isDebt => op.type == OperationType.debtIn || op.type == OperationType.debtOut;
+  String get payee => op.payee;
+  String get categoryName => category?.name ?? 'Без категории';
 
   /// Главная подпись: категория, «Перевод», «Дал в долг» и т.п.
   String get title => switch (op.type) {
@@ -81,15 +83,19 @@ class OperationView {
         : '${debtOperationLabel(debt!.direction, op.type)}: ${debt!.personName}',
   };
 
-  /// Вторая строка: родительская категория, счёт(а).
+  /// Заголовок в ленте: получатель, если указан, иначе [title].
+  String get headline => payee.isNotEmpty && (isExpense || isIncome) ? payee : title;
+
+  /// Вторая строка: категория (если в заголовке получатель), счёт(а).
   String get details {
     final accountName = account?.name ?? 'Удалённый счёт';
     return switch (op.type) {
       OperationType.transfer => '$accountName → ${toAccount?.name ?? 'Удалённый счёт'}',
-      OperationType.expense || OperationType.income =>
-        category?.parentId != null && topCategory != null
-            ? '${topCategory!.name} · $accountName'
-            : accountName,
+      OperationType.expense || OperationType.income => [
+        if (payee.isNotEmpty) categoryName
+        else if (category?.parentId != null && topCategory != null) topCategory!.name,
+        accountName,
+      ].join(' · '),
       _ => accountName,
     };
   }
@@ -99,6 +105,7 @@ class OperationView {
     title,
     details,
     op.note,
+    op.payee,
     debt?.personName ?? '',
     Money.toEditable(op.amount.abs(), decimals: currency.decimals),
     if (op.toAmount != null)

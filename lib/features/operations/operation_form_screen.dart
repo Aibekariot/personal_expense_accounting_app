@@ -3,17 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
+import '../../app/theme.dart';
 import '../../core/app_icons.dart';
 import '../../core/formatters.dart';
 import '../../core/money.dart';
 import '../../core/widgets/amount_field.dart';
+import '../../core/widgets/amount_keypad.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../data/db/app_database.dart';
 import '../../data/providers.dart';
 import '../../data/repositories/operation_repository.dart';
 import '../../domain/budgets.dart';
+import '../../domain/calculator.dart';
 import '../../domain/debts.dart';
 import '../../domain/ledger.dart';
+import '../../domain/payees.dart';
 import '../../domain/providers.dart';
 import 'category_picker.dart';
 
@@ -44,10 +48,15 @@ class OperationFormScreen extends ConsumerStatefulWidget {
 
 class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _amount = TextEditingController();
   final _toAmount = TextEditingController();
   final _debtAmount = TextEditingController();
   final _note = TextEditingController();
+  final _payee = TextEditingController();
+  final _payeeFocus = FocusNode();
+
+  /// Выражение суммы с калькулятора: «350+120».
+  String _expr = '';
+  bool _keypadVisible = true;
 
   OperationType _type = OperationType.expense;
   int? _accountId;
@@ -55,6 +64,9 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   int? _categoryId;
   int? _debtId;
   DateTime _date = dayOf(DateTime.now());
+
+  /// Пользователь сам выбрал категорию — больше не подставляем её по получателю.
+  bool _categoryTouched = false;
 
   /// Пользователь сам ввёл сумму зачисления / сумму в валюте долга —
   /// больше не подставляем её по курсу.
@@ -68,6 +80,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   bool _notFound = false;
   bool _saving = false;
   String? _categoryError;
+  String? _amountError;
 
   bool get _isEdit => widget.operationId != null;
   bool get _isTransfer => _type == OperationType.transfer;
@@ -78,15 +91,19 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   @override
   void initState() {
     super.initState();
+    _payeeFocus.addListener(() {
+      if (_payeeFocus.hasFocus) setState(() => _keypadVisible = false);
+    });
     _load();
   }
 
   @override
   void dispose() {
-    _amount.dispose();
     _toAmount.dispose();
     _debtAmount.dispose();
     _note.dispose();
+    _payee.dispose();
+    _payeeFocus.dispose();
     super.dispose();
   }
 
@@ -105,8 +122,12 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
         _debtId = op.debtId;
         _date = _isEdit ? op.date : dayOf(DateTime.now());
         _note.text = op.note;
+        _payee.text = op.payee;
+        _categoryTouched = true;
         _toAmountTouched = true;
         _debtAmountTouched = true;
+        // Сумма уже есть — клавиатура откроется по нажатию на сумму.
+        _keypadVisible = !_isEdit;
       }
     } else {
       _type = widget.type ?? OperationType.expense;
@@ -123,7 +144,8 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     _amountsFilled = true;
     final op = _source;
     if (op == null) return;
-    _amount.text = Money.toEditable(op.amount, decimals: _currencyOf(l, op.accountId).decimals);
+    _expr = Money.toEditable(op.amount, decimals: _currencyOf(l, op.accountId).decimals)
+        .replaceAll('-', '−');
     if (op.toAmount != null && op.toAccountId != null) {
       _toAmount.text = Money.toEditable(op.toAmount!, decimals: _currencyOf(l, op.toAccountId!).decimals);
     }
@@ -136,12 +158,15 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   Currency _currencyOf(Ledger l, int accountId) =>
       l.currency(l.accounts[accountId]?.currencyCode ?? l.base.code);
 
+  int? _amountValue(Ledger l) =>
+      _accountId == null ? null : evaluateAmount(_expr, decimals: _currencyOf(l, _accountId!).decimals);
+
   /// Подставляет сумму зачисления и сумму в валюте долга по текущему курсу,
   /// пока пользователь не ввёл их сам.
   void _autofill(Ledger l) {
-    final from = _accountId == null ? null : _currencyOf(l, _accountId!);
-    if (from == null) return;
-    final amount = AmountField.valueOf(_amount, decimals: from.decimals);
+    if (_accountId == null) return;
+    final from = _currencyOf(l, _accountId!);
+    final amount = _amountValue(l);
     void fill(TextEditingController c, Currency to) {
       final v = amount == null ? null : l.rates.latest.convert(amount, from, to);
       c.text = v == null || v <= 0 ? '' : Money.toEditable(v, decimals: to.decimals);
@@ -156,6 +181,33 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     }
   }
 
+  void _onKey(Ledger l, String key) {
+    final decimals = _currencyOf(l, _accountId!).decimals;
+    setState(() {
+      _expr = pressKey(_expr, key, decimals: decimals, allowNegative: _isAdjustment);
+      _amountError = null;
+      _autofill(l);
+    });
+  }
+
+  void _showKeypad() {
+    FocusScope.of(context).unfocus();
+    setState(() => _keypadVisible = true);
+  }
+
+  /// Получатель изменён: подставляем категорию, которую обычно выбирают для него.
+  void _onPayeeChanged(Ledger l, String value) {
+    setState(() {
+      if (!_categoryTouched && _isCategorized) {
+        final suggested = suggestCategory(l, value, _type);
+        if (suggested != null && l.categories.containsKey(suggested)) {
+          _categoryId = suggested;
+          _categoryError = null;
+        }
+      }
+    });
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -167,17 +219,24 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   }
 
   Future<void> _save(Ledger l, List<Budget> budgets) async {
-    setState(() => _categoryError = null);
+    // Незаконченное выражение («350+») — сначала посчитать.
+    if (_expr.isNotEmpty && hasOperator(_expr) && _amountValue(l) == null) {
+      setState(() => _amountError = 'Выражение не закончено');
+      return;
+    }
+    final accountId = _accountId!;
+    final currency = _currencyOf(l, accountId);
+    final amount = _amountValue(l);
+    setState(() {
+      _categoryError = null;
+      _amountError = amount == null ? 'Введите сумму' : null;
+    });
     final formOk = _formKey.currentState!.validate();
     if (_isCategorized && _categoryId == null) {
       setState(() => _categoryError = 'Выберите категорию');
-      return;
     }
-    if (!formOk) return;
+    if (amount == null || !formOk || (_isCategorized && _categoryId == null)) return;
 
-    final accountId = _accountId!;
-    final currency = _currencyOf(l, accountId);
-    final amount = AmountField.valueOf(_amount, decimals: currency.decimals)!;
     int? toAmount;
     if (_isTransfer) {
       final to = _currencyOf(l, _toAccountId!);
@@ -202,6 +261,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
       debtId: _debtId,
       debtAmount: debtAmount,
       note: _note.text,
+      payee: _payee.text,
     );
     final error = input.validate();
     if (error != null) {
@@ -289,6 +349,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     final ledger = ref.watch(ledgerProvider);
     final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
     final l = ledger.value;
+    final ready = !_loading && l != null && !_notFound;
 
     return Scaffold(
       appBar: AppBar(
@@ -308,31 +369,23 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
           ],
         ],
       ),
-      body: _loading || l == null
+      body: !ready
           ? Center(
-              child: ledger.hasError
-                  ? Text('Ошибка: ${ledger.error}')
-                  : const CircularProgressIndicator(),
+              child: _notFound
+                  ? const Text('Операция не найдена')
+                  : ledger.hasError
+                      ? Text('Ошибка: ${ledger.error}')
+                      : const CircularProgressIndicator(),
             )
-          : _notFound
-              ? const Center(child: Text('Операция не найдена'))
-              : _buildForm(l, budgets),
+          : _buildBody(l, budgets),
     );
   }
 
-  Widget _buildForm(Ledger l, List<Budget> budgets) {
-    final theme = Theme.of(context);
-    final balances = ref.watch(accountBalancesProvider).value ?? const <int, int>{};
+  Widget _buildBody(Ledger l, List<Budget> budgets) {
     final active = l.accounts.values.where((a) => !a.isArchived).toList();
     if (active.isEmpty && _accountId == null) {
       return const Center(child: Text('Сначала создайте счёт на вкладке «Счета»'));
     }
-
-    // Счета для выбора: активные + уже выбранные (даже если в архиве).
-    List<Account> choices(int? selected) => [
-      ...active,
-      if (selected != null && l.accounts[selected]?.isArchived == true) l.accounts[selected]!,
-    ];
     if (_accountId == null || !l.accounts.containsKey(_accountId)) {
       _accountId = active.first.id;
     }
@@ -341,24 +394,55 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
       _toAccountId = active.where((a) => a.id != _accountId).firstOrNull?.id;
     }
     _fillAmounts(l);
+    if (_isDebt && l.debts[_debtId] == null) {
+      return const Center(child: Text('Долг не найден'));
+    }
+    final currency = _currencyOf(l, _accountId!);
+
+    return Column(
+      children: [
+        Expanded(child: _buildForm(l, active)),
+        if (_keypadVisible)
+          AmountKeypad(
+            onKey: (k) => _onKey(l, k),
+            onAction: _saving ? () {} : () => _save(l, budgets),
+            onHide: () => setState(() => _keypadVisible = false),
+            showEquals: hasOperator(_expr),
+            allowComma: currency.decimals > 0,
+          )
+        else
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: FilledButton(
+                onPressed: _saving ? null : () => _save(l, budgets),
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                child: const Text('Сохранить'),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildForm(Ledger l, List<Account> active) {
+    final theme = Theme.of(context);
+    final balances = ref.watch(accountBalancesProvider).value ?? const <int, int>{};
+
+    // Счета для выбора: активные + уже выбранные (даже если в архиве).
+    List<Account> choices(int? selected) => [
+      ...active,
+      if (selected != null && l.accounts[selected]?.isArchived == true) l.accounts[selected]!,
+    ];
 
     final currency = _currencyOf(l, _accountId!);
     final debt = l.debts[_debtId];
-    if (_isDebt && debt == null) {
-      return const Center(child: Text('Долг не найден'));
-    }
     final debtCurrency = debt == null ? null : l.currency(debt.currencyCode);
     final toCurrency = _toAccountId == null ? null : _currencyOf(l, _toAccountId!);
     final categoryType = _type == OperationType.income ? CategoryType.income : CategoryType.expense;
+    final amount = _amountValue(l);
 
-    final amountLabel = switch (_type) {
-      OperationType.expense => 'Сумма расхода',
-      OperationType.income => 'Сумма дохода',
-      OperationType.transfer => 'Списать',
-      OperationType.adjustment => 'Изменение баланса',
-      OperationType.debtIn || OperationType.debtOut =>
-        _type == OperationType.debtOut ? 'Сумма (ушло со счёта)' : 'Сумма (пришло на счёт)',
-    };
     final accountLabel = switch (_type) {
       OperationType.income || OperationType.debtIn => 'На счёт',
       OperationType.adjustment => 'Счёт',
@@ -368,7 +452,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           if (!_isDebt && !_isAdjustment) ...[
             SegmentedButton<OperationType>(
@@ -382,30 +466,32 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
               onSelectionChanged: (s) => setState(() {
                 final next = s.first;
                 final nextType = next == OperationType.income ? CategoryType.income : CategoryType.expense;
-                if (l.categories[_categoryId]?.type != nextType) _categoryId = null;
+                if (l.categories[_categoryId]?.type != nextType) {
+                  _categoryId = null;
+                  _categoryTouched = false;
+                }
                 _type = next;
                 _categoryError = null;
                 _autofill(l);
+                if (!_categoryTouched) _onPayeeChanged(l, _payee.text);
               }),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
           if (debt != null) ...[
             _DebtCard(view: debtView(l, debt)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
           ],
-          AmountField(
-            controller: _amount,
-            decimals: currency.decimals,
-            symbol: currency.symbol,
-            label: amountLabel,
-            allowNegative: _isAdjustment,
-            autofocus: !_isEdit,
-            helperText: _isAdjustment ? 'Плюс — денег стало больше, минус — меньше' : null,
-            textStyle: theme.textTheme.headlineSmall,
-            onChanged: (_) => setState(() => _autofill(l)),
+          _AmountDisplay(
+            expr: _expr,
+            value: amount,
+            currency: currency,
+            type: _type,
+            active: _keypadVisible,
+            error: _amountError,
+            onTap: _showKeypad,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _AccountDropdown(
             label: accountLabel,
             accounts: choices(_accountId),
@@ -418,7 +504,7 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
             }),
           ),
           if (_isTransfer) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             if (_toAccountId == null)
               const Text('Для перевода нужен второй счёт — создайте его на вкладке «Счета»')
             else ...[
@@ -434,33 +520,50 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
                 }),
               ),
               if (toCurrency != null && toCurrency.code != currency.code) ...[
-                const SizedBox(height: 16),
-                AmountField(
+                const SizedBox(height: 12),
+                _SecondaryAmount(
                   controller: _toAmount,
-                  decimals: toCurrency.decimals,
-                  symbol: toCurrency.symbol,
+                  currency: toCurrency,
                   label: 'Зачислить',
-                  helperText: _exchangeHint(currency, toCurrency, _amount, _toAmount,
+                  helper: _exchangeHint(currency, toCurrency, amount,
+                      AmountField.valueOf(_toAmount, decimals: toCurrency.decimals),
                       'Подставлено по курсу — исправьте на реальную сумму обмена'),
-                  onChanged: (_) => setState(() => _toAmountTouched = true),
+                  onFocus: () => setState(() => _keypadVisible = false),
+                  onChanged: () => setState(() => _toAmountTouched = true),
                 ),
               ],
             ],
           ],
           if (debt != null && debtCurrency!.code != currency.code) ...[
-            const SizedBox(height: 16),
-            AmountField(
+            const SizedBox(height: 12),
+            _SecondaryAmount(
               controller: _debtAmount,
-              decimals: debtCurrency.decimals,
-              symbol: debtCurrency.symbol,
+              currency: debtCurrency,
               label: 'Сколько это в валюте долга',
-              helperText: _exchangeHint(currency, debtCurrency, _amount, _debtAmount,
-                  'Долг в ${debtCurrency.code}, счёт в ${currency.code}: укажите, на сколько уменьшится/вырастет долг'),
-              onChanged: (_) => setState(() => _debtAmountTouched = true),
+              helper: _exchangeHint(currency, debtCurrency, amount,
+                  AmountField.valueOf(_debtAmount, decimals: debtCurrency.decimals),
+                  'Долг в ${debtCurrency.code}, счёт в ${currency.code}: укажите, на сколько изменится долг'),
+              onFocus: () => setState(() => _keypadVisible = false),
+              onChanged: () => setState(() => _debtAmountTouched = true),
             ),
           ],
           if (_isCategorized) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            _PayeeField(
+              controller: _payee,
+              focusNode: _payeeFocus,
+              label: _type == OperationType.income ? 'Плательщик' : 'Получатель',
+              hint: _type == OperationType.income ? 'Например: работа' : 'Магазин, кафе, человек',
+              suggestions: payeeSuggestions(l, _type, _payee.text),
+              onChanged: (v) => _onPayeeChanged(l, v),
+              onSelected: (v) {
+                _payee.text = v;
+                _payee.selection = TextSelection.collapsed(offset: v.length);
+                _onPayeeChanged(l, v);
+                FocusScope.of(context).unfocus();
+              },
+            ),
+            const SizedBox(height: 16),
             Text('Категория', style: theme.textTheme.titleSmall),
             if (_categoryError != null)
               Text(_categoryError!, style: TextStyle(color: theme.colorScheme.error)),
@@ -470,29 +573,29 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
               selectedId: _categoryId,
               onSelected: (id) => setState(() {
                 _categoryId = id;
+                _categoryTouched = true;
                 _categoryError = null;
               }),
               onSettings: () => context.push(Routes.categories),
             ),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           _DateChips(date: _date, onChanged: (d) => setState(() => _date = d), onPick: _pickDate),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _note,
-            maxLength: 200,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Комментарий',
-              hintText: 'Необязательно',
-              border: OutlineInputBorder(),
+          Focus(
+            onFocusChange: (f) {
+              if (f) setState(() => _keypadVisible = false);
+            },
+            child: TextFormField(
+              controller: _note,
+              maxLength: 200,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Комментарий',
+                hintText: 'Необязательно',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _saving ? null : () => _save(l, budgets),
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-            child: const Text('Сохранить'),
           ),
         ],
       ),
@@ -500,20 +603,207 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
   }
 
   /// Подсказка под второй суммой: курс обмена из введённых сумм.
-  String _exchangeHint(
-    Currency from,
-    Currency to,
-    TextEditingController fromCtrl,
-    TextEditingController toCtrl,
-    String fallback,
-  ) {
-    final a = AmountField.valueOf(fromCtrl, decimals: from.decimals);
-    final b = AmountField.valueOf(toCtrl, decimals: to.decimals);
+  String _exchangeHint(Currency from, Currency to, int? a, int? b, String fallback) {
     if (a == null || b == null || a <= 0 || b <= 0) return fallback;
     final rate = (b / Money.factor(to.decimals)) / (a / Money.factor(from.decimals));
     return rate >= 1
         ? 'Курс обмена: 1 ${from.symbol} = ${formatRate(rate)} ${to.symbol}'
         : 'Курс обмена: 1 ${to.symbol} = ${formatRate(1 / rate)} ${from.symbol}';
+  }
+}
+
+/// Крупная сумма вверху формы; нажатие открывает клавиатуру-калькулятор.
+class _AmountDisplay extends StatelessWidget {
+  const _AmountDisplay({
+    required this.expr,
+    required this.value,
+    required this.currency,
+    required this.type,
+    required this.active,
+    required this.error,
+    required this.onTap,
+  });
+
+  final String expr;
+  final int? value;
+  final Currency currency;
+  final OperationType type;
+  final bool active;
+  final String? error;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colors = MoneyColors.of(context);
+    final accent = switch (type) {
+      OperationType.expense => colors.expense,
+      OperationType.income => colors.income,
+      _ => scheme.onSurface,
+    };
+    final withOps = hasOperator(expr);
+    final shown = expr.isEmpty ? '0' : formatExpression(expr);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: error != null ? scheme.error : (active ? scheme.primary : Colors.transparent),
+            width: 2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  type == OperationType.adjustment ? 'Изменение' : 'Сумма',
+                  style: theme.textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$shown ${currency.symbol}',
+                      style: (withOps ? theme.textTheme.titleLarge : theme.textTheme.displaySmall)
+                          ?.copyWith(
+                        color: expr.isEmpty ? scheme.onSurfaceVariant : (withOps ? null : accent),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (withOps)
+              Text(
+                value == null ? '= …' : '= ${currency.format(value!)}',
+                style: theme.textTheme.headlineMedium?.copyWith(color: accent, fontWeight: FontWeight.w500),
+              ),
+            if (error != null)
+              Text(error!, style: theme.textTheme.bodySmall?.copyWith(color: scheme.error)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Вторая сумма (зачисление при обмене, сумма в валюте долга) — с обычной клавиатурой.
+class _SecondaryAmount extends StatelessWidget {
+  const _SecondaryAmount({
+    required this.controller,
+    required this.currency,
+    required this.label,
+    required this.helper,
+    required this.onFocus,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final Currency currency;
+  final String label;
+  final String helper;
+  final VoidCallback onFocus;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (f) {
+        if (f) onFocus();
+      },
+      child: AmountField(
+        controller: controller,
+        decimals: currency.decimals,
+        symbol: currency.symbol,
+        label: label,
+        helperText: helper,
+        onChanged: (_) => onChanged(),
+      ),
+    );
+  }
+}
+
+/// Получатель с подсказками из истории (частые — первыми).
+class _PayeeField extends StatelessWidget {
+  const _PayeeField({
+    required this.controller,
+    required this.focusNode,
+    required this.label,
+    required this.hint,
+    required this.suggestions,
+    required this.onChanged,
+    required this.onSelected,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String label;
+  final String hint;
+  final List<String> suggestions;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          focusNode: focusNode,
+          maxLength: 60,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            counterText: '',
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.storefront_outlined),
+            suffixIcon: controller.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Очистить',
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      controller.clear();
+                      onChanged('');
+                    },
+                  ),
+          ),
+          onChanged: onChanged,
+        ),
+        if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              spacing: 6,
+              children: [
+                for (final s in suggestions)
+                  ActionChip(
+                    label: Text(s),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => onSelected(s),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 

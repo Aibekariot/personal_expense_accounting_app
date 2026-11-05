@@ -27,6 +27,7 @@ class OperationFilter {
     this.kinds = const {},
     this.accountId,
     this.categoryId,
+    this.payee,
     this.query = '',
   });
 
@@ -36,10 +37,14 @@ class OperationFilter {
 
   /// Категория; для основной категории подходят и её подкатегории.
   final int? categoryId;
+
+  /// Получатель / плательщик (точное совпадение).
+  final String? payee;
   final String query;
 
   /// Включены ли фильтры (кроме поиска).
-  bool get hasFilters => kinds.isNotEmpty || accountId != null || categoryId != null;
+  bool get hasFilters =>
+      kinds.isNotEmpty || accountId != null || categoryId != null || payee != null;
 
   bool get isEmpty => !hasFilters && query.trim().isEmpty;
 
@@ -47,12 +52,14 @@ class OperationFilter {
     Set<OperationKind>? kinds,
     int? Function()? accountId,
     int? Function()? categoryId,
+    String? Function()? payee,
     String? query,
   }) =>
       OperationFilter(
         kinds: kinds ?? this.kinds,
         accountId: accountId == null ? this.accountId : accountId(),
         categoryId: categoryId == null ? this.categoryId : categoryId(),
+        payee: payee == null ? this.payee : payee(),
         query: query ?? this.query,
       );
 
@@ -70,6 +77,7 @@ class OperationFilter {
         v.category?.parentId != categoryId) {
       return false;
     }
+    if (payee != null && v.payee != payee) return false;
     final words = query.toLowerCase().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
     return words.every(v.searchText.contains);
   }

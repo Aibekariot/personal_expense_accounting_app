@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../app/theme.dart';
+import '../../core/app_icons.dart';
 import '../../core/formatters.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/period_bar.dart';
@@ -14,6 +15,7 @@ import '../../domain/operation_filter.dart';
 import '../../domain/period.dart';
 import '../../domain/providers.dart';
 import '../../domain/stats.dart';
+import '../accounts/accounts_overview.dart';
 import 'filter_sheet.dart';
 import 'operation_tile.dart';
 
@@ -112,6 +114,7 @@ class _History extends ConsumerWidget {
     final ops = source.where(filter.matches).toList();
 
     final header = <Widget>[
+      if (!searching) _BalanceHeader(filter: filter),
       if (!searching)
         PeriodBar(
           period: period,
@@ -289,7 +292,75 @@ class _ActiveFilters extends ConsumerWidget {
               label: Text(category.name),
               onDeleted: () => notifier.set(filter.copyWith(categoryId: () => null)),
             ),
+          if (filter.payee != null)
+            InputChip(
+              avatar: const Icon(Icons.storefront_outlined, size: 18),
+              label: Text(filter.payee!.isEmpty ? 'Без получателя' : filter.payee!),
+              onDeleted: () => notifier.set(filter.copyWith(payee: () => null)),
+            ),
           TextButton(onPressed: notifier.reset, child: const Text('Сбросить')),
+        ],
+      ),
+    );
+  }
+}
+
+/// Общий баланс и счета. Нажатие на счёт — показать только его операции.
+class _BalanceHeader extends ConsumerWidget {
+  const _BalanceHeader({required this.filter});
+
+  final OperationFilter filter;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final overview = ref.watch(accountsOverviewProvider).value;
+    if (overview == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final notifier = ref.read(operationFilterProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('Баланс', style: theme.textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    overview.base.format(overview.capital),
+                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              spacing: 8,
+              children: [
+                for (final v in overview.active)
+                  FilterChip(
+                    avatar: Icon(accountTypeIcon(v.account.type), size: 18, color: Color(v.account.color)),
+                    label: Text('${v.account.name}  ${v.currency.format(v.balance)}'),
+                    selected: filter.accountId == v.account.id,
+                    showCheckmark: false,
+                    onSelected: (on) => notifier.set(
+                      filter.copyWith(accountId: () => on ? v.account.id : null),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

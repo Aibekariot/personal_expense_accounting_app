@@ -19,6 +19,7 @@ import '../features/debts/debts_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/operations/operation_form_screen.dart';
 import '../features/operations/operations_screen.dart';
+import '../features/payees/payees_screen.dart';
 import '../features/stats/stats_screen.dart';
 import 'home_shell.dart';
 
@@ -56,6 +57,7 @@ abstract final class Routes {
   static String debt(int id) => '/more/debts/$id';
   static String debtEdit(int id) => '/more/debts/$id/edit';
   static const backup = '/more/backup';
+  static const payees = '/more/payees';
 
   /// Категории открываются и из «Ещё», и из формы операции — поэтому
   /// они поверх вкладок, а не внутри «Ещё».
@@ -224,6 +226,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'backup',
                     builder: (_, _) => const BackupScreen(),
+                  ),
+                  GoRoute(
+                    path: 'payees',
+                    builder: (_, _) => const PayeesScreen(),
                   ),
                 ],
               ),

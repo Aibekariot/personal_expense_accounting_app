@@ -21,7 +21,7 @@ String operationsToCsv(Ledger ledger, Iterable<OperationView> ops) {
 
   final rows = <List<String>>[
     [
-      'Дата', 'Тип', 'Счёт', 'Сумма', 'Валюта', 'Категория', 'Подкатегория',
+      'Дата', 'Тип', 'Счёт', 'Сумма', 'Валюта', 'Категория', 'Подкатегория', 'Получатель',
       'Счёт зачисления', 'Сумма зачисления', 'Валюта зачисления', 'Долг',
       'Комментарий', 'Сумма в ${ledger.base.code}',
     ],
@@ -34,6 +34,7 @@ String operationsToCsv(Ledger ledger, Iterable<OperationView> ops) {
         v.currency.code,
         v.topCategory?.name ?? '',
         v.category?.parentId != null ? v.category!.name : '',
+        v.payee,
         v.toAccount?.name ?? '',
         v.op.toAmount == null ? '' : amount(v.op.toAmount!, v.toCurrency!),
         v.toCurrency?.code ?? '',

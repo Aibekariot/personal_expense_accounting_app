@@ -2611,6 +2611,16 @@ class $OperationsTable extends Operations
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _payeeMeta = const VerificationMeta('payee');
+  @override
+  late final GeneratedColumn<String> payee = GeneratedColumn<String>(
+    'payee',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2648,6 +2658,7 @@ class $OperationsTable extends Operations
     debtId,
     debtAmount,
     note,
+    payee,
     createdAt,
     updatedAt,
   ];
@@ -2729,6 +2740,12 @@ class $OperationsTable extends Operations
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('payee')) {
+      context.handle(
+        _payeeMeta,
+        payee.isAcceptableOrUnknown(data['payee']!, _payeeMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2796,6 +2813,10 @@ class $OperationsTable extends Operations
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      payee: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payee'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2838,6 +2859,11 @@ class Operation extends DataClass implements Insertable<Operation> {
   final int? debtId;
   final int? debtAmount;
   final String note;
+
+  /// Получатель (магазин, кафе) для расхода или плательщик для дохода.
+  /// Пустая строка — не указан. Отдельной таблицы нет: список получателей
+  /// собирается из операций, переименование — замена во всех операциях.
+  final String payee;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Operation({
@@ -2852,6 +2878,7 @@ class Operation extends DataClass implements Insertable<Operation> {
     this.debtId,
     this.debtAmount,
     required this.note,
+    required this.payee,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2883,6 +2910,7 @@ class Operation extends DataClass implements Insertable<Operation> {
       map['debt_amount'] = Variable<int>(debtAmount);
     }
     map['note'] = Variable<String>(note);
+    map['payee'] = Variable<String>(payee);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2911,6 +2939,7 @@ class Operation extends DataClass implements Insertable<Operation> {
           ? const Value.absent()
           : Value(debtAmount),
       note: Value(note),
+      payee: Value(payee),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2935,6 +2964,7 @@ class Operation extends DataClass implements Insertable<Operation> {
       debtId: serializer.fromJson<int?>(json['debtId']),
       debtAmount: serializer.fromJson<int?>(json['debtAmount']),
       note: serializer.fromJson<String>(json['note']),
+      payee: serializer.fromJson<String>(json['payee']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2956,6 +2986,7 @@ class Operation extends DataClass implements Insertable<Operation> {
       'debtId': serializer.toJson<int?>(debtId),
       'debtAmount': serializer.toJson<int?>(debtAmount),
       'note': serializer.toJson<String>(note),
+      'payee': serializer.toJson<String>(payee),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2973,6 +3004,7 @@ class Operation extends DataClass implements Insertable<Operation> {
     Value<int?> debtId = const Value.absent(),
     Value<int?> debtAmount = const Value.absent(),
     String? note,
+    String? payee,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Operation(
@@ -2987,6 +3019,7 @@ class Operation extends DataClass implements Insertable<Operation> {
     debtId: debtId.present ? debtId.value : this.debtId,
     debtAmount: debtAmount.present ? debtAmount.value : this.debtAmount,
     note: note ?? this.note,
+    payee: payee ?? this.payee,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -3009,6 +3042,7 @@ class Operation extends DataClass implements Insertable<Operation> {
           ? data.debtAmount.value
           : this.debtAmount,
       note: data.note.present ? data.note.value : this.note,
+      payee: data.payee.present ? data.payee.value : this.payee,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -3028,6 +3062,7 @@ class Operation extends DataClass implements Insertable<Operation> {
           ..write('debtId: $debtId, ')
           ..write('debtAmount: $debtAmount, ')
           ..write('note: $note, ')
+          ..write('payee: $payee, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3047,6 +3082,7 @@ class Operation extends DataClass implements Insertable<Operation> {
     debtId,
     debtAmount,
     note,
+    payee,
     createdAt,
     updatedAt,
   );
@@ -3065,6 +3101,7 @@ class Operation extends DataClass implements Insertable<Operation> {
           other.debtId == this.debtId &&
           other.debtAmount == this.debtAmount &&
           other.note == this.note &&
+          other.payee == this.payee &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -3081,6 +3118,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
   final Value<int?> debtId;
   final Value<int?> debtAmount;
   final Value<String> note;
+  final Value<String> payee;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const OperationsCompanion({
@@ -3095,6 +3133,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
     this.debtId = const Value.absent(),
     this.debtAmount = const Value.absent(),
     this.note = const Value.absent(),
+    this.payee = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -3110,6 +3149,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
     this.debtId = const Value.absent(),
     this.debtAmount = const Value.absent(),
     this.note = const Value.absent(),
+    this.payee = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : type = Value(type),
@@ -3128,6 +3168,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
     Expression<int>? debtId,
     Expression<int>? debtAmount,
     Expression<String>? note,
+    Expression<String>? payee,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -3143,6 +3184,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
       if (debtId != null) 'debt_id': debtId,
       if (debtAmount != null) 'debt_amount': debtAmount,
       if (note != null) 'note': note,
+      if (payee != null) 'payee': payee,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -3160,6 +3202,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
     Value<int?>? debtId,
     Value<int?>? debtAmount,
     Value<String>? note,
+    Value<String>? payee,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -3175,6 +3218,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
       debtId: debtId ?? this.debtId,
       debtAmount: debtAmount ?? this.debtAmount,
       note: note ?? this.note,
+      payee: payee ?? this.payee,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -3218,6 +3262,9 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (payee.present) {
+      map['payee'] = Variable<String>(payee.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3241,6 +3288,7 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
           ..write('debtId: $debtId, ')
           ..write('debtAmount: $debtAmount, ')
           ..write('note: $note, ')
+          ..write('payee: $payee, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))

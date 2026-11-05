@@ -10,6 +10,7 @@ class MoreScreen extends StatelessWidget {
   static const _items = [
     (icon: Icons.handshake_outlined, title: 'Долги', subtitle: 'Кто кому и сколько должен', route: Routes.debts),
     (icon: Icons.track_changes, title: 'Бюджеты', subtitle: 'Месячные лимиты по категориям', route: Routes.budgets),
+    (icon: Icons.storefront_outlined, title: 'Получатели и плательщики', subtitle: 'Где и сколько тратите, переименование', route: Routes.payees),
     (icon: Icons.category_outlined, title: 'Категории', subtitle: 'Категории доходов и расходов', route: Routes.categories),
     (icon: Icons.currency_exchange, title: 'Валюты и курсы', subtitle: 'Свои валюты, основная валюта, курсы', route: Routes.currencies),
     (icon: Icons.calculate_outlined, title: 'Конвертер валют', subtitle: 'Пересчитать сумму во все валюты', route: Routes.converter),

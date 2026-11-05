@@ -113,6 +113,12 @@ class BackupService {
         d.putIfAbsent('initialAmount', () => 0);
       }
     }
+    final operations = table('operations');
+    if (schema < 3) {
+      for (final o in operations) {
+        o.putIfAbsent('payee', () => '');
+      }
+    }
 
     try {
       return BackupData._(
@@ -122,7 +128,7 @@ class BackupService {
         accounts: table('accounts').map(Account.fromJson).toList(),
         categories: table('categories').map(CategoryEntity.fromJson).toList(),
         debts: debts.map(Debt.fromJson).toList(),
-        operations: table('operations').map(Operation.fromJson).toList(),
+        operations: operations.map(Operation.fromJson).toList(),
         budgets: table('budgets').map(Budget.fromJson).toList(),
         settings: table('settings').map(Setting.fromJson).toList(),
       );
