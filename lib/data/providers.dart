@@ -130,3 +130,15 @@ final backupSnoozeUntilProvider = StreamProvider<DateTime?>(
 final plansProvider = StreamProvider<List<PlannedOperation>>(
   (ref) => ref.watch(planRepositoryProvider).watchAll(),
 );
+
+final themeModeProvider = StreamProvider<String>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchThemeMode(),
+);
+
+final hideBalanceProvider = StreamProvider<bool>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchHideBalance(),
+);
+
+final defaultAccountIdProvider = StreamProvider<int?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchDefaultAccountId(),
+);

@@ -34,7 +34,7 @@ class PlansScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Регулярные платежи'),
+          title: const Text('Планы'),
           bottom: const TabBar(tabs: [Tab(text: 'Список'), Tab(text: 'Календарь')]),
         ),
         floatingActionButton: FloatingActionButton.extended(

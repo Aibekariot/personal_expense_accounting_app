@@ -3,7 +3,15 @@ import 'package:drift/drift.dart';
 // ВАЖНО: все денежные суммы хранятся ЦЕЛЫМИ числами в минимальных единицах
 // валюты (тыйыны, центы). 1 500,50 сом = 150050. Никаких double для денег.
 
-enum AccountType { cash, card, deposit, other }
+enum AccountType {
+  cash,
+  card,
+  deposit,
+  other,
+
+  /// Кредит, ипотека, рассрочка: баланс обычно отрицательный.
+  credit,
+}
 
 enum CategoryType { expense, income }
 

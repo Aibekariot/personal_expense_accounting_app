@@ -76,4 +76,28 @@ class SettingsRepository {
 
   Future<void> setBackupSnoozeUntil(DateTime value) =>
       set(SettingKeys.backupSnoozeUntil, value.toIso8601String());
+
+  // --- Оформление ---
+
+  /// 'dark' (по умолчанию), 'light' или 'system'.
+  Stream<String> watchThemeMode() => watch(SettingKeys.themeMode).map((v) => v ?? 'dark');
+
+  Future<void> setThemeMode(String mode) => set(SettingKeys.themeMode, mode);
+
+  /// Скрывать суммы баланса (*** вместо цифр).
+  Stream<bool> watchHideBalance() => watch(SettingKeys.hideBalance).map((v) => v == 'true');
+
+  Future<void> setHideBalance(bool value) => set(SettingKeys.hideBalance, value.toString());
+
+  // --- Счёт по умолчанию для новых операций ---
+
+  Stream<int?> watchDefaultAccountId() =>
+      watch(SettingKeys.defaultAccountId).map((v) => int.tryParse(v ?? ''));
+
+  Future<int?> defaultAccountId() async => int.tryParse(await get(SettingKeys.defaultAccountId) ?? '');
+
+  /// null — убрать счёт по умолчанию (тогда подставляется последний использованный).
+  Future<void> setDefaultAccountId(int? id) => id == null
+      ? (_db.delete(_db.settings)..where((s) => s.key.equals(SettingKeys.defaultAccountId))).go()
+      : set(SettingKeys.defaultAccountId, id.toString());
 }

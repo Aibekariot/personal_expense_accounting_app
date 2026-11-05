@@ -96,7 +96,6 @@ class AmountField extends StatelessWidget {
         helperText: helperText,
         helperMaxLines: 3,
         suffixText: symbol,
-        border: const OutlineInputBorder(),
         prefixIcon: allowNegative
             ? IconButton(
                 icon: const Icon(Icons.exposure),

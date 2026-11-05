@@ -35,6 +35,9 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
   int _color = pickerColors.first;
   bool _includeInTotal = true;
 
+  /// Подставлять этот счёт в новые операции.
+  bool _isDefault = false;
+
   Account? _existing;
   bool _hasOperations = false;
   bool _loading = true;
@@ -70,6 +73,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
         _currencyCode = a.currencyCode;
         _color = a.color;
         _includeInTotal = a.includeInTotal;
+        _isDefault = await ref.read(settingsRepositoryProvider).defaultAccountId() == a.id;
         _initialBalance.text = a.initialBalance == 0
             ? ''
             : Money.toEditable(a.initialBalance, decimals: currency?.decimals ?? 2);
@@ -94,8 +98,10 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
     setState(() => _saving = true);
     try {
       final existing = _existing;
+      final settings = ref.read(settingsRepositoryProvider);
+      final wasDefault = existing != null && await settings.defaultAccountId() == existing.id;
       if (existing == null) {
-        await repo.create(
+        final id = await repo.create(
           name: _name.text.trim(),
           type: _type,
           currencyCode: currency.code,
@@ -103,6 +109,7 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           color: _color,
           includeInTotal: _includeInTotal,
         );
+        if (_isDefault) await settings.setDefaultAccountId(id);
       } else {
         await repo.update(existing.copyWith(
           name: _name.text.trim(),
@@ -112,6 +119,11 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           color: _color,
           includeInTotal: _includeInTotal,
         ));
+        if (_isDefault) {
+          await settings.setDefaultAccountId(existing.id);
+        } else if (wasDefault) {
+          await settings.setDefaultAccountId(null);
+        }
       }
       if (mounted) context.pop();
     } catch (e) {
@@ -240,6 +252,18 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           : _notFound
               ? const Center(child: Text('Счёт не найден'))
               : _buildForm(currencies),
+      bottomNavigationBar: _loading || _notFound || currencies.isEmpty
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: FilledButton(
+                  onPressed: _saving ? null : () => _save(currencies),
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                  child: const Text('Сохранить'),
+                ),
+              ),
+            ),
     );
   }
 
@@ -308,7 +332,6 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Название',
               hintText: 'Например: Наличные \$, Карта Мбанк',
-              border: OutlineInputBorder(),
             ),
             maxLength: 50,
             validator: (v) =>
@@ -335,7 +358,6 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Валюта',
-              border: const OutlineInputBorder(),
               helperText: _hasOperations
                   ? 'Нельзя сменить: по счёту уже есть операции'
                   : null,
@@ -372,19 +394,21 @@ class _AccountFormScreenState extends ConsumerState<AccountFormScreen> {
           const SizedBox(height: 12),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Учитывать в общем капитале'),
+            title: const Text('Включить в общий баланс'),
             subtitle: const Text(
               'Выключите, например, для чужих денег на вашей карте',
             ),
             value: _includeInTotal,
             onChanged: (v) => setState(() => _includeInTotal = v),
           ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: _saving ? null : () => _save(currencies),
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-            child: const Text('Сохранить'),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Счёт по умолчанию'),
+            subtitle: const Text('Подставляется в новые операции'),
+            value: _isDefault,
+            onChanged: (v) => setState(() => _isDefault = v),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );

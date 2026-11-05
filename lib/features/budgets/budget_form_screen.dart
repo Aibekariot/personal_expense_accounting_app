@@ -152,7 +152,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               helperText: 'Расход — лимит на месяц, доход — план дохода. '
                   'Для основной категории учитываются и подкатегории',
               helperMaxLines: 2,
-              border: OutlineInputBorder(),
             ),
             items: items,
             onChanged: (v) => setState(() => _categoryId = v),
@@ -174,7 +173,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               labelText: 'Валюта бюджета',
               helperText: 'Расходы в других валютах пересчитываются по курсу на дату расхода',
               helperMaxLines: 2,
-              border: OutlineInputBorder(),
             ),
             items: [
               for (final c in currencies) DropdownMenuItem(value: c.code, child: Text(c.label)),

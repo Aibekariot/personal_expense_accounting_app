@@ -160,8 +160,10 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
     } else {
       _type = widget.type ?? OperationType.expense;
       _debtId = widget.debtId;
+      final settings = ref.read(settingsRepositoryProvider);
       _accountId = widget.accountId ??
-          await ref.read(settingsRepositoryProvider).lastAccountId();
+          await settings.defaultAccountId() ??
+          await settings.lastAccountId();
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -638,7 +640,6 @@ class _OperationFormScreenState extends ConsumerState<OperationFormScreen> {
               decoration: const InputDecoration(
                 labelText: 'Комментарий',
                 hintText: 'Необязательно',
-                border: OutlineInputBorder(),
               ),
             ),
           ),
@@ -804,7 +805,7 @@ class _AccountDropdown extends StatelessWidget {
       key: ValueKey('$label-$value'),
       initialValue: value,
       isExpanded: true,
-      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      decoration: InputDecoration(labelText: label),
       items: [
         for (final a in accounts)
           DropdownMenuItem(

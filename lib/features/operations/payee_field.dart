@@ -35,7 +35,6 @@ class PayeeField extends StatelessWidget {
             labelText: label,
             hintText: hint,
             counterText: '',
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.storefront_outlined),
             suffixIcon: controller.text.isEmpty
                 ? null

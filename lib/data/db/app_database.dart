@@ -16,6 +16,9 @@ abstract final class SettingKeys {
   static const lastAccountId = 'last_account_id';
   static const lastBackup = 'last_backup';
   static const backupSnoozeUntil = 'backup_snooze_until';
+  static const themeMode = 'theme_mode';
+  static const hideBalance = 'hide_balance';
+  static const defaultAccountId = 'default_account_id';
 }
 
 @DriftDatabase(

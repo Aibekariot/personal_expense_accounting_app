@@ -43,6 +43,7 @@ IconData accountTypeIcon(AccountType type) => switch (type) {
   AccountType.card => Icons.credit_card,
   AccountType.deposit => Icons.savings_outlined,
   AccountType.other => Icons.account_balance_wallet_outlined,
+  AccountType.credit => Icons.account_balance_outlined,
 };
 
 String accountTypeLabel(AccountType type) => switch (type) {
@@ -50,4 +51,5 @@ String accountTypeLabel(AccountType type) => switch (type) {
   AccountType.card => 'Карта',
   AccountType.deposit => 'Вклад',
   AccountType.other => 'Другое',
+  AccountType.credit => 'Кредит',
 };

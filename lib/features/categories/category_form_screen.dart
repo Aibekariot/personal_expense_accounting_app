@@ -201,7 +201,6 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Название',
-                    border: OutlineInputBorder(),
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Введите название' : null,
                 ),
@@ -227,7 +226,6 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Входит в категорию',
-              border: const OutlineInputBorder(),
               helperText: _hasChildren
                   ? 'У категории есть подкатегории — она может быть только основной'
                   : null,

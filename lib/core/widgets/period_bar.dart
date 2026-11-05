@@ -18,56 +18,8 @@ class PeriodBar extends StatelessWidget {
   final bool monthsOnly;
 
   Future<void> _pick(BuildContext context) async {
-    final now = DateTime.now();
-    final options = <(String, Period Function())>[
-      ('Этот месяц', () => Period.month(now)),
-      ('Прошлый месяц', () => Period.month(DateTime(now.year, now.month - 1))),
-      if (!monthsOnly) ...[
-        ('Этот год', () => Period.year(now)),
-        ('Прошлый год', () => Period.year(DateTime(now.year - 1))),
-        ('Всё время', Period.all),
-      ],
-    ];
-    final result = await showModalBottomSheet<Object>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (label, make) in options)
-              ListTile(
-                title: Text(label),
-                trailing: make() == period ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.pop(ctx, make()),
-              ),
-            if (!monthsOnly)
-              ListTile(
-                leading: const Icon(Icons.date_range),
-                title: const Text('Выбрать даты…'),
-                onTap: () => Navigator.pop(ctx, 'custom'),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (!context.mounted || result == null) return;
-    if (result is Period) {
-      onChanged(result);
-      return;
-    }
-    final range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(now.year + 5),
-      initialDateRange: period.kind == PeriodKind.all
-          ? null
-          : DateTimeRange(start: period.start, end: period.lastDay),
-      helpText: 'Период',
-      saveText: 'Готово',
-    );
-    if (range != null) onChanged(Period.custom(range.start, range.end));
+    final p = await pickPeriod(context, period, monthsOnly: monthsOnly);
+    if (p != null) onChanged(p);
   }
 
   @override
@@ -108,4 +60,56 @@ class PeriodBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Выбор периода в нижней панели: месяц, год, всё время или свои даты.
+/// null — пользователь закрыл выбор.
+Future<Period?> pickPeriod(BuildContext context, Period period, {bool monthsOnly = false}) async {
+    final now = DateTime.now();
+    final options = <(String, Period Function())>[
+      ('Этот месяц', () => Period.month(now)),
+      ('Прошлый месяц', () => Period.month(DateTime(now.year, now.month - 1))),
+      if (!monthsOnly) ...[
+        ('Этот год', () => Period.year(now)),
+        ('Прошлый год', () => Period.year(DateTime(now.year - 1))),
+        ('Всё время', Period.all),
+      ],
+    ];
+    final result = await showModalBottomSheet<Object>(
+      context: context,
+      useRootNavigator: true,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (label, make) in options)
+              ListTile(
+                title: Text(label),
+                trailing: make() == period ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.pop(ctx, make()),
+              ),
+            if (!monthsOnly)
+              ListTile(
+                leading: const Icon(Icons.date_range),
+                title: const Text('Выбрать даты…'),
+                onTap: () => Navigator.pop(ctx, 'custom'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted || result == null) return null;
+    if (result is Period) return result;
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 5),
+      initialDateRange: period.kind == PeriodKind.all
+          ? null
+          : DateTimeRange(start: period.start, end: period.lastDay),
+      helpText: 'Период',
+      saveText: 'Готово',
+    );
+    return range == null ? null : Period.custom(range.start, range.end);
 }

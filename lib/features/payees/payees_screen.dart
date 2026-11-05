@@ -54,7 +54,7 @@ class _PayeesScreenState extends ConsumerState<PayeesScreen> {
             TextField(
               controller: controller,
               autofocus: true,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
+              decoration: const InputDecoration(),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -117,7 +117,6 @@ class _PayeesScreenState extends ConsumerState<PayeesScreen> {
                   decoration: const InputDecoration(
                     hintText: 'Поиск',
                     prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
                     isDense: true,
                   ),
                   onChanged: (v) => setState(() => _query = v),

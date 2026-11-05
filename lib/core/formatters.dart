@@ -48,6 +48,7 @@ String formatDayHeader(DateTime day, {DateTime? today}) {
   final d = dayOf(day);
   if (d == t) return 'Сегодня';
   if (d == DateTime(t.year, t.month, t.day - 1)) return 'Вчера';
+  if (d == DateTime(t.year, t.month, t.day + 1)) return 'Завтра';
   final pattern = d.year == t.year ? 'd MMMM, EEEE' : 'd MMMM yyyy, EEEE';
   return DateFormat(pattern, 'ru').format(d);
 }

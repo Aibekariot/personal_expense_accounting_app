@@ -1,15 +1,134 @@
 import 'package:flutter/material.dart';
 
-const _seed = Color(0xFF00897B);
+/// Фирменный акцент приложения — фиолетовый.
+const _seed = Color(0xFF6E5BFF);
+
+/// Тёмная тема: почти чёрный фон и слегка приподнятые карточки.
+ColorScheme _darkScheme() => ColorScheme.fromSeed(
+  seedColor: _seed,
+  brightness: Brightness.dark,
+).copyWith(
+  primary: const Color(0xFFA699FF),
+  onPrimary: const Color(0xFF1B1060),
+  primaryContainer: const Color(0xFF3A2FA0),
+  onPrimaryContainer: const Color(0xFFE6E1FF),
+  tertiary: const Color(0xFF5FE0B0),
+  surface: const Color(0xFF0F1014),
+  surfaceContainerLowest: const Color(0xFF0A0B0E),
+  surfaceContainerLow: const Color(0xFF15161B),
+  surfaceContainer: const Color(0xFF1A1B21),
+  surfaceContainerHigh: const Color(0xFF212229),
+  surfaceContainerHighest: const Color(0xFF292A32),
+  outlineVariant: const Color(0xFF2C2D36),
+);
+
+ColorScheme _lightScheme() => ColorScheme.fromSeed(
+  seedColor: _seed,
+  brightness: Brightness.light,
+).copyWith(
+  primary: const Color(0xFF5643E0),
+  tertiary: const Color(0xFF00916A),
+  surface: const Color(0xFFF7F7FB),
+);
 
 ThemeData buildTheme(Brightness brightness) {
-  final scheme = ColorScheme.fromSeed(seedColor: _seed, brightness: brightness);
+  final dark = brightness == Brightness.dark;
+  final scheme = dark ? _darkScheme() : _lightScheme();
+  final radius = BorderRadius.circular(16);
+
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
-    extensions: [
-      brightness == Brightness.light ? MoneyColors.light : MoneyColors.dark,
-    ],
+    scaffoldBackgroundColor: scheme.surface,
+    extensions: [dark ? MoneyColors.dark : MoneyColors.light],
+    appBarTheme: AppBarTheme(
+      backgroundColor: scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: scheme.onSurface,
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: scheme.surfaceContainerLow,
+      indicatorColor: scheme.primary.withValues(alpha: 0.18),
+      surfaceTintColor: Colors.transparent,
+      height: 68,
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (s) => TextStyle(
+          fontSize: 12,
+          fontWeight: s.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w400,
+          color: s.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
+        ),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (s) => IconThemeData(
+          color: s.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
+        ),
+      ),
+    ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: scheme.surfaceContainerLow,
+      indicatorColor: scheme.primary.withValues(alpha: 0.18),
+    ),
+    cardTheme: CardThemeData(
+      color: scheme.surfaceContainer,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: radius),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        shape: const StadiumBorder(),
+        minimumSize: const Size(64, 48),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(shape: const StadiumBorder(), minimumSize: const Size(64, 44)),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: scheme.primary,
+      foregroundColor: scheme.onPrimary,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: scheme.surfaceContainerHigh,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.error),
+      ),
+    ),
+    chipTheme: ChipThemeData(shape: const StadiumBorder(), side: BorderSide(color: scheme.outlineVariant)),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(
+        selectedBackgroundColor: scheme.primary.withValues(alpha: 0.2),
+        selectedForegroundColor: scheme.primary,
+      ),
+    ),
+    dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: scheme.surfaceContainerLow,
+      surfaceTintColor: Colors.transparent,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: scheme.surfaceContainerHigh,
+      surfaceTintColor: Colors.transparent,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? scheme.onPrimary : null,
+      ),
+    ),
   );
 }
 
@@ -33,17 +152,17 @@ class MoneyColors extends ThemeExtension<MoneyColors> {
   final Color chartExpense;
 
   static const light = MoneyColors(
-    income: Color(0xFF2E7D32),
-    expense: Color(0xFFC62828),
-    neutral: Color(0xFF546E7A),
+    income: Color(0xFF1E8E4E),
+    expense: Color(0xFFD03B3B),
+    neutral: Color(0xFF5C6370),
     chartIncome: Color(0xFF2A78D6),
     chartExpense: Color(0xFFEB6834),
   );
 
   static const dark = MoneyColors(
-    income: Color(0xFF81C784),
-    expense: Color(0xFFEF9A9A),
-    neutral: Color(0xFFB0BEC5),
+    income: Color(0xFF5FD68E),
+    expense: Color(0xFFFF7A7A),
+    neutral: Color(0xFFA8AEBA),
     chartIncome: Color(0xFF3987E5),
     chartExpense: Color(0xFFD95926),
   );

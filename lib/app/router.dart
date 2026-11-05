@@ -69,7 +69,7 @@ abstract final class Routes {
       '/categories/new?type=${type.name}${parentId == null ? '' : '&parent=$parentId'}';
   static String categoryEdit(int id) => '/categories/$id';
 
-  /// Регулярные платежи — тоже поверх вкладок (открываются из ленты и из «Ещё»).
+  /// Регулярные платежи — отдельная вкладка «Планы».
   static const plans = '/plans';
   static String planNew({int? fromOperation}) =>
       fromOperation == null ? '/plans/new' : '/plans/new?from=$fromOperation';
@@ -96,20 +96,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           copyFromId: _intParam(state, 'copy'),
           planId: _intParam(state, 'plan'),
         ),
-      ),
-      GoRoute(
-        path: Routes.plans,
-        builder: (_, _) => const PlansScreen(),
-        routes: [
-          GoRoute(
-            path: 'new',
-            builder: (_, state) => PlanFormScreen(fromOperationId: _intParam(state, 'from')),
-          ),
-          GoRoute(
-            path: ':id',
-            builder: (_, state) => PlanFormScreen(planId: int.tryParse(state.pathParameters['id']!) ?? -1),
-          ),
-        ],
       ),
       GoRoute(
         path: '/operation/:id',
@@ -141,14 +127,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.operations,
-                builder: (_, _) => const OperationsScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
                 path: Routes.accounts,
                 builder: (_, _) => const AccountsScreen(),
                 routes: [
@@ -163,6 +141,35 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (_, state) => AccountFormScreen(
                       accountId: int.tryParse(state.pathParameters['id']!) ?? -1,
                     ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.operations,
+                builder: (_, _) => const OperationsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.plans,
+                builder: (_, _) => const PlansScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, state) => PlanFormScreen(fromOperationId: _intParam(state, 'from')),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (_, state) =>
+                        PlanFormScreen(planId: int.tryParse(state.pathParameters['id']!) ?? -1),
                   ),
                 ],
               ),

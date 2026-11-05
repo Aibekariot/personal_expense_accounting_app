@@ -50,7 +50,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final period = ref.watch(statsPeriodProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Статистика')),
+      appBar: AppBar(title: const Text('Аналитика')),
       body: ledger.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Ошибка загрузки: $e')),

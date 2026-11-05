@@ -76,7 +76,6 @@ class _ConverterScreenState extends ConsumerState<ConverterScreen> {
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Валюта',
-                        border: OutlineInputBorder(),
                       ),
                       items: [
                         for (final c in list)

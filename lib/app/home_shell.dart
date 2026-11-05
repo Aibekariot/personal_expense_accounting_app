@@ -40,10 +40,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   StatefulNavigationShell get shell => widget.shell;
 
   static const _destinations = <({IconData icon, IconData selected, String label})>[
-    (icon: Icons.receipt_long_outlined, selected: Icons.receipt_long, label: 'Операции'),
     (icon: Icons.account_balance_wallet_outlined, selected: Icons.account_balance_wallet, label: 'Счета'),
-    (icon: Icons.pie_chart_outline, selected: Icons.pie_chart, label: 'Статистика'),
-    (icon: Icons.menu, selected: Icons.menu, label: 'Ещё'),
+    (icon: Icons.receipt_long_outlined, selected: Icons.receipt_long, label: 'Операции'),
+    (icon: Icons.calendar_month_outlined, selected: Icons.calendar_month, label: 'Планы'),
+    (icon: Icons.insights_outlined, selected: Icons.insights, label: 'Аналитика'),
+    (icon: Icons.more_horiz, selected: Icons.more_horiz, label: 'Ещё'),
   ];
 
   void _onSelect(int index) {

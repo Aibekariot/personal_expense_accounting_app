@@ -43,8 +43,15 @@ class PeriodNotifier extends Notifier<Period> {
   void next() => state = state.next ?? state;
 }
 
+/// Период «за всё время» по умолчанию (лента операций).
+class AllTimePeriodNotifier extends PeriodNotifier {
+  @override
+  Period build() => Period.all();
+}
+
+/// Лента показывает всю историю; период — необязательный фильтр.
 final operationsPeriodProvider =
-    NotifierProvider<PeriodNotifier, Period>(PeriodNotifier.new);
+    NotifierProvider<PeriodNotifier, Period>(AllTimePeriodNotifier.new);
 
 final statsPeriodProvider =
     NotifierProvider<PeriodNotifier, Period>(PeriodNotifier.new);

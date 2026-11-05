@@ -78,7 +78,8 @@ class _DebtFormScreenState extends ConsumerState<DebtFormScreen> {
         _hasOperations = await repo.hasOperations(d.id);
       }
     } else {
-      _accountId = await ref.read(settingsRepositoryProvider).lastAccountId();
+      final settings = ref.read(settingsRepositoryProvider);
+      _accountId = await settings.defaultAccountId() ?? await settings.lastAccountId();
       _currencyCode = await ref.read(settingsRepositoryProvider).baseCurrency();
     }
     if (mounted) setState(() => _loading = false);
@@ -195,7 +196,6 @@ class _DebtFormScreenState extends ConsumerState<DebtFormScreen> {
             decoration: InputDecoration(
               labelText: _direction == DebtDirection.theyOwe ? 'Кому дал' : 'У кого взял',
               hintText: 'Имя человека или банк',
-              border: const OutlineInputBorder(),
             ),
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Введите имя' : null,
           ),
@@ -214,7 +214,7 @@ class _DebtFormScreenState extends ConsumerState<DebtFormScreen> {
             DropdownButtonFormField<int>(
               initialValue: account.id,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Счёт', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Счёт'),
               items: [for (final a in accounts) DropdownMenuItem(value: a.id, child: Text(a.name))],
               onChanged: (v) => setState(() => _accountId = v),
             ),
@@ -225,7 +225,6 @@ class _DebtFormScreenState extends ConsumerState<DebtFormScreen> {
               isExpanded: true,
               decoration: InputDecoration(
                 labelText: 'Валюта долга',
-                border: const OutlineInputBorder(),
                 helperText: canChangeKind ? null : 'Нельзя сменить: по долгу уже есть операции',
               ),
               items: [for (final c in currencies) DropdownMenuItem(value: c.code, child: Text(c.label))],
@@ -275,7 +274,6 @@ class _DebtFormScreenState extends ConsumerState<DebtFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Комментарий',
               hintText: 'Необязательно',
-              border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 16),

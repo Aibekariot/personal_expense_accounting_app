@@ -195,7 +195,6 @@ class _CurrencyFormScreenState extends ConsumerState<CurrencyFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Код',
               helperText: 'Например CNY, TRY или свой: GOLD',
-              border: OutlineInputBorder(),
             ),
             validator: (v) => RegExp(r'^[A-Z0-9]{1,10}$').hasMatch(v?.trim() ?? '')
                 ? null
@@ -208,7 +207,6 @@ class _CurrencyFormScreenState extends ConsumerState<CurrencyFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Название',
               hintText: 'Например: Китайский юань',
-              border: OutlineInputBorder(),
             ),
             validator: (v) {
               final t = v?.trim() ?? '';
@@ -223,7 +221,6 @@ class _CurrencyFormScreenState extends ConsumerState<CurrencyFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Символ',
               helperText: 'Как показывать суммы: 100 ¥. Пусто — будет код',
-              border: OutlineInputBorder(),
             ),
             validator: (v) =>
                 (v?.trim().length ?? 0) > 10 ? 'Не длиннее 10 символов' : null,
@@ -233,7 +230,6 @@ class _CurrencyFormScreenState extends ConsumerState<CurrencyFormScreen> {
             initialValue: _decimals,
             decoration: InputDecoration(
               labelText: 'Знаков после запятой',
-              border: const OutlineInputBorder(),
               helperText: _isUsed
                   ? 'Нельзя изменить: валюта уже используется'
                   : null,
@@ -272,7 +268,6 @@ class _CurrencyFormScreenState extends ConsumerState<CurrencyFormScreen> {
                     ],
                     decoration: InputDecoration(
                       labelText: '1 ед. = ? $baseSymbol',
-                      border: const OutlineInputBorder(),
                     ),
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? null

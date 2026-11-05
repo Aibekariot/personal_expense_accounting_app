@@ -1,29 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/period_bar.dart';
 import '../../data/db/app_database.dart';
 import '../../domain/ledger.dart';
 import '../../domain/operation_filter.dart';
+import '../../domain/period.dart';
 import '../../domain/providers.dart';
 
 /// Нижняя панель фильтра истории: виды операций, счёт, категория.
 Future<void> showFilterSheet(BuildContext context, WidgetRef ref, Ledger ledger) async {
   final current = ref.read(operationFilterProvider);
-  final result = await showModalBottomSheet<OperationFilter>(
+  final period = ref.read(operationsPeriodProvider);
+  final result = await showModalBottomSheet<(OperationFilter, Period)>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _FilterSheet(ledger: ledger, initial: current),
+    builder: (_) => _FilterSheet(ledger: ledger, initial: current, period: period),
   );
-  if (result != null) ref.read(operationFilterProvider.notifier).set(result);
+  if (result == null) return;
+  ref.read(operationFilterProvider.notifier).set(result.$1);
+  ref.read(operationsPeriodProvider.notifier).select(result.$2);
 }
 
 class _FilterSheet extends StatefulWidget {
-  const _FilterSheet({required this.ledger, required this.initial});
+  const _FilterSheet({required this.ledger, required this.initial, required this.period});
 
   final Ledger ledger;
   final OperationFilter initial;
+  final Period period;
 
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
@@ -33,6 +39,7 @@ class _FilterSheetState extends State<_FilterSheet> {
   late final Set<OperationKind> _kinds = {...widget.initial.kinds};
   late int? _accountId = widget.initial.accountId;
   late int? _categoryId = widget.initial.categoryId;
+  late Period _period = widget.period;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +79,18 @@ class _FilterSheetState extends State<_FilterSheet> {
             children: [
               Text('Фильтр', style: theme.textTheme.titleLarge),
               const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.date_range),
+                title: const Text('Период'),
+                subtitle: Text(_period.label),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  final p = await pickPeriod(context, _period);
+                  if (p != null) setState(() => _period = p);
+                },
+              ),
+              const SizedBox(height: 8),
               Text('Вид операции', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
               Wrap(
@@ -90,7 +109,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               DropdownButtonFormField<int?>(
                 initialValue: _accountId,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Счёт', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Счёт'),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Все счета')),
                   for (final a in accounts)
@@ -109,7 +128,6 @@ class _FilterSheetState extends State<_FilterSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Категория',
                   helperText: 'Основная категория включает свои подкатегории',
-                  border: OutlineInputBorder(),
                 ),
                 items: categoryItems,
                 onChanged: (v) => setState(() => _categoryId = v),
@@ -121,7 +139,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(
                         context,
-                        OperationFilter(query: widget.initial.query),
+                        (OperationFilter(query: widget.initial.query), Period.all()),
                       ),
                       child: const Text('Сбросить'),
                     ),
@@ -131,12 +149,15 @@ class _FilterSheetState extends State<_FilterSheet> {
                     child: FilledButton(
                       onPressed: () => Navigator.pop(
                         context,
-                        OperationFilter(
-                          kinds: _kinds,
-                          accountId: _accountId,
-                          categoryId: _categoryId,
-                          payee: widget.initial.payee,
-                          query: widget.initial.query,
+                        (
+                          OperationFilter(
+                            kinds: _kinds,
+                            accountId: _accountId,
+                            categoryId: _categoryId,
+                            payee: widget.initial.payee,
+                            query: widget.initial.query,
+                          ),
+                          _period,
                         ),
                       ),
                       child: const Text('Применить'),

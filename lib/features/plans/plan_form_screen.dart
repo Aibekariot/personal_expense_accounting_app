@@ -111,7 +111,8 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
         _sourceAmounts = (op.amount, op.toAmount);
       }
     } else {
-      _accountId = await ref.read(settingsRepositoryProvider).lastAccountId();
+      final settings = ref.read(settingsRepositoryProvider);
+      _accountId = await settings.defaultAccountId() ?? await settings.lastAccountId();
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -230,7 +231,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
           key: ValueKey('$label-$value'),
           initialValue: value,
           isExpanded: true,
-          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+          decoration: InputDecoration(labelText: label),
           items: [for (final a in list) DropdownMenuItem(value: a.id, child: Text(a.name))],
           onChanged: (v) => v == null ? null : setState(() => onChanged(v)),
         );
@@ -336,7 +337,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                 flex: 3,
                 child: DropdownButtonFormField<RepeatUnit>(
                   initialValue: _unit,
-                  decoration: const InputDecoration(labelText: 'Повторять', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Повторять'),
                   items: const [
                     DropdownMenuItem(value: RepeatUnit.none, child: Text('Не повторять')),
                     DropdownMenuItem(value: RepeatUnit.day, child: Text('Каждый день')),
@@ -358,7 +359,6 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Интервал',
                       helperText: '1 — каждый раз',
-                      border: OutlineInputBorder(),
                     ),
                     validator: (v) => (int.tryParse(v ?? '') ?? 0) < 1 ? 'Не меньше 1' : null,
                     onChanged: (_) => setState(() {}),
@@ -406,7 +406,6 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Комментарий',
               hintText: 'Необязательно',
-              border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 8),
