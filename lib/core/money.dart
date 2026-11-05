@@ -54,6 +54,10 @@ abstract final class Money {
     return buf.toString();
   }
 
+  /// Сумма для поля ввода: без пробелов между разрядами, `150050` → `1500,50`.
+  static String toEditable(int minor, {int decimals = 2}) =>
+      format(minor, decimals: decimals).replaceAll(_nbsp, '').replaceAll('−', '-');
+
   /// Разбирает введённую сумму: `"1 500,5"` → `150050`.
   ///
   /// Понимает запятую и точку как десятичный разделитель, пробелы игнорирует.

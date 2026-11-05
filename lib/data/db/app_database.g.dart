@@ -1962,6 +1962,18 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
       'REFERENCES currencies (code)',
     ),
   );
+  static const VerificationMeta _initialAmountMeta = const VerificationMeta(
+    'initialAmount',
+  );
+  @override
+  late final GeneratedColumn<int> initialAmount = GeneratedColumn<int>(
+    'initial_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _dueDateMeta = const VerificationMeta(
     'dueDate',
   );
@@ -2016,6 +2028,7 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     personName,
     direction,
     currencyCode,
+    initialAmount,
     dueDate,
     note,
     isClosed,
@@ -2054,6 +2067,15 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
       );
     } else if (isInserting) {
       context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('initial_amount')) {
+      context.handle(
+        _initialAmountMeta,
+        initialAmount.isAcceptableOrUnknown(
+          data['initial_amount']!,
+          _initialAmountMeta,
+        ),
+      );
     }
     if (data.containsKey('due_date')) {
       context.handle(
@@ -2106,6 +2128,10 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.string,
         data['${effectivePrefix}currency_code'],
       )!,
+      initialAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}initial_amount'],
+      )!,
       dueDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}due_date'],
@@ -2142,6 +2168,10 @@ class Debt extends DataClass implements Insertable<Debt> {
   /// Валюта долга. Остаток долга НЕ хранится — он вычисляется
   /// из связанных операций debtOut / debtIn.
   final String currencyCode;
+
+  /// Сумма долга, который был ещё до начала учёта (деньги через счета
+  /// в приложении не проходили). Обычно 0.
+  final int initialAmount;
   final DateTime? dueDate;
   final String note;
   final bool isClosed;
@@ -2151,6 +2181,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     required this.personName,
     required this.direction,
     required this.currencyCode,
+    required this.initialAmount,
     this.dueDate,
     required this.note,
     required this.isClosed,
@@ -2167,6 +2198,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       );
     }
     map['currency_code'] = Variable<String>(currencyCode);
+    map['initial_amount'] = Variable<int>(initialAmount);
     if (!nullToAbsent || dueDate != null) {
       map['due_date'] = Variable<DateTime>(dueDate);
     }
@@ -2182,6 +2214,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       personName: Value(personName),
       direction: Value(direction),
       currencyCode: Value(currencyCode),
+      initialAmount: Value(initialAmount),
       dueDate: dueDate == null && nullToAbsent
           ? const Value.absent()
           : Value(dueDate),
@@ -2203,6 +2236,7 @@ class Debt extends DataClass implements Insertable<Debt> {
         serializer.fromJson<String>(json['direction']),
       ),
       currencyCode: serializer.fromJson<String>(json['currencyCode']),
+      initialAmount: serializer.fromJson<int>(json['initialAmount']),
       dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       note: serializer.fromJson<String>(json['note']),
       isClosed: serializer.fromJson<bool>(json['isClosed']),
@@ -2219,6 +2253,7 @@ class Debt extends DataClass implements Insertable<Debt> {
         $DebtsTable.$converterdirection.toJson(direction),
       ),
       'currencyCode': serializer.toJson<String>(currencyCode),
+      'initialAmount': serializer.toJson<int>(initialAmount),
       'dueDate': serializer.toJson<DateTime?>(dueDate),
       'note': serializer.toJson<String>(note),
       'isClosed': serializer.toJson<bool>(isClosed),
@@ -2231,6 +2266,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     String? personName,
     DebtDirection? direction,
     String? currencyCode,
+    int? initialAmount,
     Value<DateTime?> dueDate = const Value.absent(),
     String? note,
     bool? isClosed,
@@ -2240,6 +2276,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     personName: personName ?? this.personName,
     direction: direction ?? this.direction,
     currencyCode: currencyCode ?? this.currencyCode,
+    initialAmount: initialAmount ?? this.initialAmount,
     dueDate: dueDate.present ? dueDate.value : this.dueDate,
     note: note ?? this.note,
     isClosed: isClosed ?? this.isClosed,
@@ -2255,6 +2292,9 @@ class Debt extends DataClass implements Insertable<Debt> {
       currencyCode: data.currencyCode.present
           ? data.currencyCode.value
           : this.currencyCode,
+      initialAmount: data.initialAmount.present
+          ? data.initialAmount.value
+          : this.initialAmount,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       note: data.note.present ? data.note.value : this.note,
       isClosed: data.isClosed.present ? data.isClosed.value : this.isClosed,
@@ -2269,6 +2309,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('personName: $personName, ')
           ..write('direction: $direction, ')
           ..write('currencyCode: $currencyCode, ')
+          ..write('initialAmount: $initialAmount, ')
           ..write('dueDate: $dueDate, ')
           ..write('note: $note, ')
           ..write('isClosed: $isClosed, ')
@@ -2283,6 +2324,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     personName,
     direction,
     currencyCode,
+    initialAmount,
     dueDate,
     note,
     isClosed,
@@ -2296,6 +2338,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.personName == this.personName &&
           other.direction == this.direction &&
           other.currencyCode == this.currencyCode &&
+          other.initialAmount == this.initialAmount &&
           other.dueDate == this.dueDate &&
           other.note == this.note &&
           other.isClosed == this.isClosed &&
@@ -2307,6 +2350,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<String> personName;
   final Value<DebtDirection> direction;
   final Value<String> currencyCode;
+  final Value<int> initialAmount;
   final Value<DateTime?> dueDate;
   final Value<String> note;
   final Value<bool> isClosed;
@@ -2316,6 +2360,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.personName = const Value.absent(),
     this.direction = const Value.absent(),
     this.currencyCode = const Value.absent(),
+    this.initialAmount = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.note = const Value.absent(),
     this.isClosed = const Value.absent(),
@@ -2326,6 +2371,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     required String personName,
     required DebtDirection direction,
     required String currencyCode,
+    this.initialAmount = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.note = const Value.absent(),
     this.isClosed = const Value.absent(),
@@ -2338,6 +2384,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<String>? personName,
     Expression<String>? direction,
     Expression<String>? currencyCode,
+    Expression<int>? initialAmount,
     Expression<DateTime>? dueDate,
     Expression<String>? note,
     Expression<bool>? isClosed,
@@ -2348,6 +2395,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (personName != null) 'person_name': personName,
       if (direction != null) 'direction': direction,
       if (currencyCode != null) 'currency_code': currencyCode,
+      if (initialAmount != null) 'initial_amount': initialAmount,
       if (dueDate != null) 'due_date': dueDate,
       if (note != null) 'note': note,
       if (isClosed != null) 'is_closed': isClosed,
@@ -2360,6 +2408,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<String>? personName,
     Value<DebtDirection>? direction,
     Value<String>? currencyCode,
+    Value<int>? initialAmount,
     Value<DateTime?>? dueDate,
     Value<String>? note,
     Value<bool>? isClosed,
@@ -2370,6 +2419,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       personName: personName ?? this.personName,
       direction: direction ?? this.direction,
       currencyCode: currencyCode ?? this.currencyCode,
+      initialAmount: initialAmount ?? this.initialAmount,
       dueDate: dueDate ?? this.dueDate,
       note: note ?? this.note,
       isClosed: isClosed ?? this.isClosed,
@@ -2394,6 +2444,9 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (currencyCode.present) {
       map['currency_code'] = Variable<String>(currencyCode.value);
     }
+    if (initialAmount.present) {
+      map['initial_amount'] = Variable<int>(initialAmount.value);
+    }
     if (dueDate.present) {
       map['due_date'] = Variable<DateTime>(dueDate.value);
     }
@@ -2416,6 +2469,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('personName: $personName, ')
           ..write('direction: $direction, ')
           ..write('currencyCode: $currencyCode, ')
+          ..write('initialAmount: $initialAmount, ')
           ..write('dueDate: $dueDate, ')
           ..write('note: $note, ')
           ..write('isClosed: $isClosed, ')

@@ -119,6 +119,10 @@ class Debts extends Table {
   /// Валюта долга. Остаток долга НЕ хранится — он вычисляется
   /// из связанных операций debtOut / debtIn.
   TextColumn get currencyCode => text().references(Currencies, #code)();
+
+  /// Сумма долга, который был ещё до начала учёта (деньги через счета
+  /// в приложении не проходили). Обычно 0.
+  IntColumn get initialAmount => integer().withDefault(const Constant(0))();
   DateTimeColumn get dueDate => dateTime().nullable()();
   TextColumn get note => text().withDefault(const Constant(''))();
   BoolColumn get isClosed => boolean().withDefault(const Constant(false))();

@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/providers.dart';
+
 /// Каркас с нижней навигацией (на телефоне) или боковой (на широком экране).
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  static const _destinations = [
+  @override
+  ConsumerState<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends ConsumerState<HomeShell> {
+  @override
+  void initState() {
+    super.initState();
+    // При запуске тихо обновляем курсы, если они устарели.
+    ref.read(ratesRepositoryProvider).updateIfStale();
+  }
+
+  StatefulNavigationShell get shell => widget.shell;
+
+  static const _destinations = <({IconData icon, IconData selected, String label})>[
     (icon: Icons.receipt_long_outlined, selected: Icons.receipt_long, label: 'Операции'),
     (icon: Icons.account_balance_wallet_outlined, selected: Icons.account_balance_wallet, label: 'Счета'),
     (icon: Icons.pie_chart_outline, selected: Icons.pie_chart, label: 'Статистика'),
