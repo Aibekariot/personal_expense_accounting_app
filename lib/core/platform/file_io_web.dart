@@ -101,3 +101,19 @@ bool isInstalledApp() {
     return false;
   }
 }
+
+/// Высота нижней системной зоны экрана в пикселях (полоска жестов iPhone).
+/// Flutter в браузере её не сообщает, поэтому читаем значение из CSS.
+double safeAreaBottom() {
+  try {
+    final probe = web.HTMLDivElement();
+    probe.style.cssText =
+        'position:fixed;bottom:0;height:0;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)';
+    web.document.body!.appendChild(probe);
+    final value = web.window.getComputedStyle(probe).paddingBottom;
+    probe.remove();
+    return double.tryParse(value.replaceAll('px', '')) ?? 0;
+  } catch (_) {
+    return 0;
+  }
+}

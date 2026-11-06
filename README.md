@@ -30,8 +30,21 @@
 | Запустить в браузере | `flutter run -d chrome` |
 | Перегенерировать код базы (после изменения `tables.dart`) | `dart run build_runner build` |
 | Тесты | `flutter test` |
-| Собрать веб-версию | `flutter build web --release` → папка `build/web` |
+| Собрать веб-версию локально | сначала удалить `build/web` и `.dart_tool/flutter_build`, затем `flutter build web --release` → папка `build/web` |
 | Перерисовать иконки | `flutter test tool/generate_icons_test.dart` |
+
+Повторная локальная сборка без очистки на Windows теряет файлы (`sqlite3.wasm`,
+`manifest.json`, манифесты шрифтов): приложение зависает на загрузке. На сайт это
+не влияет: GitHub всегда собирает с нуля. Для просмотра достаточно `flutter run -d chrome`.
+
+## Как поменять внешний вид
+
+| Что | Где |
+|---|---|
+| Высота нижней панели над краем экрана | `bottomGap` в `lib/app/bottom_gap.dart` |
+| Толщина самой нижней панели | `height` в `navigationBarTheme`, `lib/app/theme.dart` |
+| Цвета и акцент | `lib/app/theme.dart` |
+| Вкладки нижней панели | `_destinations` в `lib/app/home_shell.dart` |
 
 ## Публикация (GitHub Pages)
 

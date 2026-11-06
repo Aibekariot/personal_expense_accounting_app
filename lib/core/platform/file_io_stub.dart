@@ -18,3 +18,5 @@ Future<bool?> requestPersistentStorage() async => null;
 Future<bool?> isStoragePersisted() async => null;
 
 bool isInstalledApp() => false;
+
+double safeAreaBottom() => 0;
